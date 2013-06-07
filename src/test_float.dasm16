@@ -1,0 +1,7 @@
+; test cases for float library
+
+    set pc, halt
+
+:halt
+    set pc, halt
+

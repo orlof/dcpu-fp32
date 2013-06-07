@@ -1,0 +1,385 @@
+; Public api functions are marked as extern
+; Arguments are pushed to stack in right to left
+; int16 values and memory addresses are returned in stack
+
+; SPECIAL NUMBER TYPES
+#define FLOAT_TYPE_NAN		0x8000
+#define FLOAT_TYPE_PINF		-3
+#define FLOAT_TYPE_PNUM		-2
+#define FLOAT_TYPE_PZERO	-1
+#define FLOAT_TYPE_NZERO	1
+#define FLOAT_TYPE_NNUM		2
+#define FLOAT_TYPE_NINF		3
+
+; OFFSETS
+#define FLOAT_TYPE			0
+#define FLOAT_EXP			1
+#define FLOAT_HIGH			2
+#define FLOAT_LOW			3
+
+;----------------------------------------------------------------
+; extern int16 float_cmp(float *left, float *right)
+;----------------------------------------------------------------
+:float_cmp
+    set push, [sp]              ; make room for return value
+
+    set push, i                 ; store registers
+    set push, j
+
+	;---------------------------------------
+    ; [sp + 5] 2. arg
+    ; [sp + 4] 1. arg
+    ; [sp + 3] return value
+    ; [sp + 2] rts
+    ; [sp + 1] i
+    ; [sp + 0] j
+	;---------------------------------------
+
+	set i, [sp + 4]             ; float *left
+	set j, [sp + 5]             ; float *right
+
+	; compare types
+    set [sp + 3], 0             ; zero return value
+
+    ifu [i], [j]
+        set [sp + 3], 1
+
+    ifa [i], [j]
+        set [sp + 3], -1
+
+    ifn [sp + 3], 0             ; different types?
+        set pc, float_cmp__finish 
+	; left.type == right.type
+
+	ifn [i], FLOAT_TYPE_PNUM    ; special values?
+    	ifn [i], FLOAT_TYPE_NNUM
+            set pc, float_cmp__finish 
+
+	; compare two positive or two negative numbers
+    jsr float_cmp_abs
+    set [sp + 3], pop
+
+    ; negate result if arguments are negative
+	ifa [i], 0
+		mli [sp + 3], -1
+
+:float_cmp__finish
+	;---------------------------------------
+	; postamble
+	;---------------------------------------
+    set j, pop
+    set i, pop
+	set pc, pop
+
+
+;----------------------------------------------------------------
+:_float_cmp_abs
+; fastcall
+;  i: float *left
+;  j: float *right
+; return
+;  [sp]: 
+;    1 if abs(left) > abs(right)
+;    0 if abs(left) == abs(right)
+;   -1 if abs(left) < abs(right)
+;----------------------------------------------------------------
+    set push, [sp]
+    set [sp+1], 0
+    ; compare low
+	ifg [i + FLOAT_LOW], [j + FLOAT_LOW]
+        set [sp + 1], 1
+	ifl [i + FLOAT_LOW], [j + FLOAT_LOW]
+        set [sp + 1], -1
+
+    ; compare high
+	ifg [i + FLOAT_LOW], [j + FLOAT_LOW]
+        set [sp + 1], 1
+	ifl [i + FLOAT_LOW], [j + FLOAT_LOW]
+        set [sp + 1], -1
+
+    ; compare exp
+	ifg [i + FLOAT_EXP], [j + FLOAT_EXP]
+        set [sp + 1], 1
+	ifl [i + FLOAT_EXP], [j + FLOAT_EXP]
+        set [sp + 1], -1
+
+    set pc, pop
+
+;----------------------------------------------------------------
+; extern void float_sub(float *left, float *right, float *result)
+;----------------------------------------------------------------
+:float_sub
+    set push, i                 ; store i
+    set i, [sp + 3]             ; float *right
+
+    ; copy right
+    set push, [i + FLOAT_LOW]
+    set push, [i + FLOAT_HIGH]
+    set push, [i + FLOAT_EXP]
+    set push, [i + FLOAT_TYPE]
+    set i, sp
+
+    mli [i], -1                 ; negate right
+
+	;---------------------------------------
+    ; [sp + 8] float *result
+    ; [sp + 7] float *right
+    ; [sp + 6] float *left
+    ; [sp + 5] rts
+    ; [sp + 4] i
+    ; [sp + 3] tmp.low
+    ; [sp + 2] tmp.high
+    ; [sp + 1] tmp.exp
+    ; [sp + 0] tmp.type
+
+    ; make float_add call
+    set push, [sp + 8]          ; original result
+    set push, i                 ; negated right
+    set push, [sp + 8]          ; original left
+    jsr float_add
+
+    add sp, 7                   ; clean stack (negated right, add arguments)
+    set i, pop                  ; restore i
+
+    set pc, pop
+
+;----------------------------------------------------------------
+; void float_add(float *left, float *right, float *result)
+;----------------------------------------------------------------
+:float_add
+    set push, a                 ; store registers
+    set push, b
+    set push, c
+    set push, i
+    set push, j
+    sub sp, 4
+
+	;---------------------------------------
+    ; [sp + 12] float *result
+    ; [sp + 11] float *right
+    ; [sp + 10] float *left
+    ; [sp + 9] rts
+    ; [sp + 8] a
+    ; [sp + 7] b
+    ; [sp + 6] c
+    ; [sp + 5] i
+    ; [sp + 4] j
+    ; [sp + 3] tmp.low
+    ; [sp + 2] tmp.high
+    ; [sp + 1] tmp.exp
+    ; [sp + 0] tmp.type
+
+	set i, [sp + 10]	
+	set j, [sp + 11]
+
+	;---------------------------------------
+	; check special cases
+	;---------------------------------------
+    ife [i], FLOAT_TYPE_NAN
+        set pc, float_add__return_nan
+    ife [j], FLOAT_TYPE_NAN
+        set pc, float_add__return_nan
+
+    ife [i], FLOAT_TYPE_PINF
+        ife [j], FLOAT_TYPE_NINF
+	        set pc, float_add__return_nan
+
+    ife [i], FLOAT_TYPE_NINF
+        ife [j], FLOAT_TYPE_PINF
+	        set pc, float_add__return_nan
+
+    ife [i], FLOAT_TYPE_PINF
+        set pc, float_add__return_pinf
+
+    ife [i], FLOAT_TYPE_NINF
+        set pc, float_add__return_ninf
+
+    ife [j], FLOAT_TYPE_PINF
+        set pc, float_add__return_pinf
+
+    ife [j], FLOAT_TYPE_NINF
+        set pc, float_add__return_ninf
+
+	;---------------------------------------
+    ; i = clone(abs(left) >= abs(right) ? left: right)
+    ; j = abs(left) < abs(right) ? left: right
+	;---------------------------------------
+    jsr _float_cmp_abs
+
+	; i = max(left, right)
+    ife -1, pop
+        set i, j
+
+	; j = min(left, right)
+    ife i, j
+        set j, [sp + 10]
+
+    ; clone
+    set [sp], [i]
+    set [sp + FLOAT_EXP], [i + FLOAT_EXP]
+    set [sp + FLOAT_HIGH], [i + FLOAT_HIGH]
+    set [sp + FLOAT_LOW], [i + FLOAT_LOW]
+
+	; quick exit if j is zero
+	ife [j], FLOAT_TYPE_PZERO
+		set pc, float_add__return
+	ife [j], FLOAT_TYPE_NZERO
+		set pc, float_add__return
+
+	set i, sp
+
+    ; i points to result (greater arg)
+    ; j points to lesser arg
+
+	;---------------------------------------
+	; align exponents
+	;---------------------------------------
+
+	; calculate exponent diff
+	set c, [i + FLOAT_EXPONENT]
+	sub c, [j + FLOAT_EXPONENT]
+	
+	; quick exit if j is too small
+	ifg c, 31
+		set pc, float_add__return
+
+	; prepare mantissa calculation
+	; copy shifted high and low to registers
+	set b, [j + FLOAT_LOW]
+	shr b, c
+
+	set a, [j + FLOAT_HIGH]
+	shr a, c
+
+	; which method to use?
+	ife [i], [j]
+		set pc, float_add__op_add
+
+:float_add__op_sub
+	bor b, ex
+	
+	sub [i + FLOAT_LOW], b
+	sbx [i + FLOAT_HIGH], a
+	
+	; normalize result
+	jsr nlz
+	
+	shl [i + FLOAT_HIGH], c
+	shl [i + FLOAT_LOW], c
+	bor [i + FLOAT_HIGH], ex
+	
+	sub [i + FLOAT_EXP], c
+	ife ex, 0
+		set pc, float_add__return
+		
+	set pc, float_add__return_zero
+
+:float_add__op_add
+	adx [i + FLOAT_LOW], b
+	adx [i + FLOAT_HIGH], a
+
+	ife ex, 0							; no overflow?
+		set pc, float_add__return
+
+	; normalize result
+	shr [i + FLOAT_LOW], 1
+	shr [i + FLOAT_HIGH], 1
+	bor [i + FLOAT_LOW], ex
+	bor [i + FLOAT_HIGH], 0x8000
+
+	add [i + FLOAT_EXP], 1
+	ife ex, 0
+		set pc, float_add__return
+
+	set pc, float_add__return_inf
+
+:float_add__return_nan
+	set [sp], FLOAT_TYPE_NAN
+	set pc, float_add__return
+
+:float_add__return_inf
+	ifa [sp], 0
+		set pc, float_add__return_ninf
+
+:float_add__return_pinf
+	set [sp], FLOAT_TYPE_PINF
+	set pc, float_add__return
+
+:float_add__return_ninf
+	set [sp], FLOAT_TYPE_NINF
+	set pc, float_add__return
+
+:float_add__return_zero
+	ifa [sp], 0
+		set [sp], FLOAT_TYPE_NZERO
+	ifu [sp], 0
+		set [sp], FLOAT_TYPE_PZERO
+
+	set pc, float_add__return
+
+:float_add__return
+	set i, [sp + 9]
+	set [i], pop
+	set [i + FLOAT_EXP], pop
+	set [i + FLOAT_HIGH], pop
+	set [i + FLOAT_LOW], pop
+
+	set j, pop
+	set i, pop
+	set c, pop
+	set b, pop
+	set a, pop
+	
+	set pc, pop
+
+
+;----------------------------------------------------------------
+:nlz
+; fastcall
+;  i: float *f
+; return
+;  c: number of leading zeroes
+;  a: garbage
+;----------------------------------------------------------------
+	set c, 0
+	set a, [i + FLOAT_HIGH]
+	ifb a, 0xffff
+		set pc, nlz16
+
+	set c, 16
+	set a, [i + FLOAT_LOW]
+
+:nlz16
+	ifb a, 0xff00
+		set pc, nlz8
+
+	add c, 8
+	shl a, 8
+	
+:nlz8
+	ifb a, 0xf000
+		set pc, nlz4
+
+	add c, 4
+	shl a, 4
+
+:nlz4
+	ifb a, 0xc000
+		set pc, nlz2
+
+	add c, 2
+	shl a, 2
+
+:nlz2
+	ifb a, 0x8000
+		set pc, pop
+
+	add c, 1
+
+    ifb a, 0x4000
+        set pc, pop
+    
+	set c, 32
+	set pc, pop
+
+
