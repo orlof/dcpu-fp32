@@ -1,4 +1,4 @@
 dcpu-fp32
 =========
 
-3rd generation of floating point libs for 0x10c DCPU
+3rd generation floating point lib for 0x10c DCPU
