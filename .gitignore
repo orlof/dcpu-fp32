@@ -1,0 +1,21 @@
+############
+## Windows
+############
+
+# Windows image file caches
+Thumbs.db
+
+# Folder config file
+Desktop.ini
+
+*.10cproj
+*.dobj16
+*.s
+*.10csln
+*.10csuo
+dist/admiral_devkit.bin
+
+# Vim and backup files #
+########################
+*~
+
