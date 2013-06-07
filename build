@@ -1,5 +1,5 @@
 #!/bin/bash
 
 cd src
-dtasm --binary -o ../dist/fp32.bin fp32.dasm
+dtasm --binary -o ../dist/fp32.bin fp32.dasm16
 

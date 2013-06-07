@@ -1,7 +1,107 @@
 ; test cases for float library
+    set pc, test_cases
+:error
+    set pc, error
 
-    set pc, halt
+:test_cases
+
+:test__cmp
+    set i, test_cmp__data
+
+:test_cmp__loop
+    ife [i], -1
+        set pc, test_cmp__break
+
+    set push, [i+1]
+    set push, [i+0]
+    jsr float_cmp
+
+    ifn [i+2], pop
+        set pc, error
+
+    add sp, 2
+
+    set push, [i+0]
+    set push, [i+1]
+    jsr float_cmp
+
+    set a, [i+2]
+    mli a, -1
+    ifn a, pop
+        set pc, error
+
+    add sp, 2
+    add i, 3
+    set pc, test_cmp__loop
+
+:test_cmp__break
+
 
 :halt
     set pc, halt
+
+:test_cmp__data 
+dat    f_nan, f_nan, 0
+
+dat    f_nan, f_pinf, 1
+dat    f_nan, f_pzero, 1
+dat    f_nan, f_nzero, 1
+dat    f_nan, f_ninf, 1
+
+dat    f_nan, f_p1_0, 1
+dat    f_nan, f_n1_0, 1
+
+dat    f_pinf, f_p1_0, 1
+dat    f_pinf, f_n1_0, 1
+
+dat    f_ninf, f_p1_0, -1
+dat    f_ninf, f_n1_0, -1
+
+dat    f_pzero, f_p1_0, -1
+dat    f_pzero, f_n1_0, 1
+
+dat    f_nzero, f_p1_0, -1
+dat    f_nzero, f_n1_0, 1
+
+dat    f_p10_0, f_p10_0, 0
+dat    f_p10_0, f_p8_0, 1
+dat    f_p10_0, f_p1_0, 1
+dat    f_p10_0, f_n1_0, 1
+dat    f_p10_0, f_n8_0, 1
+dat    f_p10_0, f_n10_0, 1
+
+dat    f_p8_0, f_p8_0, 0
+dat    f_p8_0, f_p1_0, 1
+dat    f_p8_0, f_n1_0, 1
+dat    f_p8_0, f_n8_0, 1
+dat    f_p8_0, f_n10_0, 1
+
+dat    f_p1_0, f_p1_0, 0
+dat    f_p1_0, f_n1_0, 1
+dat    f_p1_0, f_n8_0, 1
+dat    f_p1_0, f_n10_0, 1
+
+dat    f_n1_0, f_n1_0, 0
+dat    f_n1_0, f_n8_0, 1
+dat    f_n1_0, f_n10_0, 1
+
+dat    f_n8_0, f_n8_0, 0
+dat    f_n8_0, f_n10_0, 1
+
+dat    f_n10_0, f_n10_0, 0
+
+dat    -1, -1, -1
+
+:f_nan    dat FLOAT_TYPE_NAN, 0, 0, 0
+:f_pinf   dat FLOAT_TYPE_PINF, 0, 0, 0
+:f_ninf   dat FLOAT_TYPE_NINF, 0, 0, 0
+:f_pzero  dat FLOAT_TYPE_PZERO, 0, 0, 0
+:f_nzero  dat FLOAT_TYPE_NZERO, 0, 0, 0
+:f_p1_0   dat FLOAT_TYPE_PNUM, 0x7fff, 0x8000, 0x0000
+:f_n1_0   dat FLOAT_TYPE_NNUM, 0x7fff, 0x8000, 0x0000
+:f_p8_0   dat FLOAT_TYPE_PNUM, 0x8002, 0x8000, 0x0000
+:f_n8_0   dat FLOAT_TYPE_NNUM, 0x8002, 0x8000, 0x0000
+:f_p10_0  dat FLOAT_TYPE_PNUM, 0x8002, 0xa000, 0x0000
+:f_n10_0  dat FLOAT_TYPE_NNUM, 0x8002, 0xa000, 0x0000
+:f_result dat 0,0,0,0
 

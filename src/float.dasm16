@@ -2,21 +2,6 @@
 ; Arguments are pushed to stack in right to left
 ; int16 values and memory addresses are returned in stack
 
-; SPECIAL NUMBER TYPES
-#define FLOAT_TYPE_NAN		0x8000
-#define FLOAT_TYPE_PINF		-3
-#define FLOAT_TYPE_PNUM		-2
-#define FLOAT_TYPE_PZERO	-1
-#define FLOAT_TYPE_NZERO	1
-#define FLOAT_TYPE_NNUM		2
-#define FLOAT_TYPE_NINF		3
-
-; OFFSETS
-#define FLOAT_TYPE			0
-#define FLOAT_EXP			1
-#define FLOAT_HIGH			2
-#define FLOAT_LOW			3
-
 ;----------------------------------------------------------------
 ; extern int16 float_cmp(float *left, float *right)
 ;----------------------------------------------------------------
@@ -56,7 +41,7 @@
             set pc, float_cmp__finish 
 
 	; compare two positive or two negative numbers
-    jsr float_cmp_abs
+    jsr _float_cmp_abs
     set [sp + 3], pop
 
     ; negate result if arguments are negative
@@ -92,9 +77,9 @@
         set [sp + 1], -1
 
     ; compare high
-	ifg [i + FLOAT_LOW], [j + FLOAT_LOW]
+	ifg [i + FLOAT_HIGH], [j + FLOAT_HIGH]
         set [sp + 1], 1
-	ifl [i + FLOAT_LOW], [j + FLOAT_LOW]
+	ifl [i + FLOAT_HIGH], [j + FLOAT_HIGH]
         set [sp + 1], -1
 
     ; compare exp
@@ -236,8 +221,8 @@
 	;---------------------------------------
 
 	; calculate exponent diff
-	set c, [i + FLOAT_EXPONENT]
-	sub c, [j + FLOAT_EXPONENT]
+	set c, [i + FLOAT_EXP]
+	sub c, [j + FLOAT_EXP]
 	
 	; quick exit if j is too small
 	ifg c, 31
@@ -260,6 +245,10 @@
 	
 	sub [i + FLOAT_LOW], b
 	sbx [i + FLOAT_HIGH], a
+
+    ife [i + FLOAT_LOW], 0
+        ife [i + FLOAT_HIGH], 0
+            set pc, float_add__return_pzero
 	
 	; normalize result
 	jsr nlz
@@ -278,6 +267,11 @@
 	adx [i + FLOAT_LOW], b
 	adx [i + FLOAT_HIGH], a
 
+    ife [i + FLOAT_LOW], 0
+        ife [i + FLOAT_HIGH], 0
+            ife ex, 0
+                set pc, float_add__return_pzero
+
 	ife ex, 0							; no overflow?
 		set pc, float_add__return
 
@@ -293,10 +287,12 @@
 
 	set pc, float_add__return_inf
 
+;----------------------------------------------------------------
 :float_add__return_nan
 	set [sp], FLOAT_TYPE_NAN
 	set pc, float_add__return
 
+;----------------------------------------------------------------
 :float_add__return_inf
 	ifa [sp], 0
 		set pc, float_add__return_ninf
@@ -309,14 +305,20 @@
 	set [sp], FLOAT_TYPE_NINF
 	set pc, float_add__return
 
+;----------------------------------------------------------------
 :float_add__return_zero
 	ifa [sp], 0
-		set [sp], FLOAT_TYPE_NZERO
-	ifu [sp], 0
-		set [sp], FLOAT_TYPE_PZERO
+		set pc, float_add__return_nzero
 
+:float_add__return_pzero
+	set [sp], FLOAT_TYPE_PZERO
 	set pc, float_add__return
 
+:float_add__return_nzero
+	set [sp], FLOAT_TYPE_NZERO
+	set pc, float_add__return
+
+;----------------------------------------------------------------
 :float_add__return
 	set i, [sp + 9]
 	set [i], pop

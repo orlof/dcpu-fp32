@@ -2,9 +2,6 @@
 ## Windows
 ############
 
-# Windows image file caches
-Thumbs.db
-
 # Folder config file
 Desktop.ini
 
@@ -13,7 +10,7 @@ Desktop.ini
 *.s
 *.10csln
 *.10csuo
-dist/admiral_devkit.bin
+*.bin
 
 # Vim and backup files #
 ########################
