@@ -1,10 +1,18 @@
-; test cases for float library
-    set pc, test_cases
-:error
-    set pc, error
+;----------------------------------------------------------------
+;
+; unit test cases for float library
+;
+;----------------------------------------------------------------
 
+    jsr detect_hardware
+
+    set a, 0
+    set b, [screen_address]
+    hwi [monitor]
+
+;----------------------------------------------------------------
 :test_cases
-
+;----------------------------------------------------------------
 :test__cmp
     set i, test_cmp__data
 
@@ -12,85 +20,415 @@
     ife [i], -1
         set pc, test_cmp__break
 
+    set push, [i+2]
     set push, [i+1]
-    set push, [i+0]
     jsr float_cmp
 
-    ifn [i+2], pop
+    ifn [i+3], pop
         set pc, error
 
     add sp, 2
 
-    set push, [i+0]
     set push, [i+1]
+    set push, [i+2]
     jsr float_cmp
 
-    set a, [i+2]
+    set a, [i+3]
     mli a, -1
     ifn a, pop
         set pc, error
 
     add sp, 2
-    add i, 3
+    add i, 4
     set pc, test_cmp__loop
 
 :test_cmp__break
 
+;----------------------------------------------------------------
+:test__add
+    set i, test_add__data
+    set a, f_result
+    set push, a
 
+:test_add__loop
+    ife [i], -1
+        set pc, test_add__break
+
+    set [a], 0
+    set [a+1], 0
+    set [a+2], 0
+    set [a+3], 0
+
+    set push, [i+2]
+    set push, [i+1]
+    jsr float_add
+
+    set b, [i+3]
+    ifn [b], [a]
+        set pc, error
+	ifn [b], FLOAT_TYPE_PNUM
+		ifn [b], FLOAT_TYPE_NNUM
+			set pc, test_add__verify_end1
+	ifn [b+1], [a+1]
+	    set pc, error
+    ifn [b+2], [a+2]
+        set pc, error
+    ifn [b+3], [a+3]
+        set pc, error
+
+:test_add__verify_end1
+    add sp, 2
+
+    set [a], 0
+    set [a+1], 0
+    set [a+2], 0
+    set [a+3], 0
+
+    set push, [i+1]
+    set push, [i+2]
+    jsr float_add
+
+    ifn [b], [a]
+        set pc, error
+	ifn [b], FLOAT_TYPE_PNUM
+		ifn [b], FLOAT_TYPE_NNUM
+			set pc, test_add__verify_end2
+	ifn [b+1], [a+1]
+	    set pc, error
+    ifn [b+2], [a+2]
+        set pc, error
+    ifn [b+3], [a+3]
+        set pc, error
+
+:test_add__verify_end2
+    add sp, 2
+    add i, 4
+    set pc, test_add__loop
+
+:test_add__break
+
+;----------------------------------------------------------------
+:test__sub
+    set i, test_sub__data
+    set a, f_result
+    set push, a
+
+:test_sub__loop
+    ife [i], -1
+        set pc, test_sub__break
+
+    set [a], 0
+    set [a+1], 0
+    set [a+2], 0
+    set [a+3], 0
+
+    set push, [i+2]
+    set push, [i+1]
+    jsr float_sub
+
+    set b, [i+3]
+    ifn [b], [a]
+        set pc, error
+	ifn [b], FLOAT_TYPE_PNUM
+		ifn [b], FLOAT_TYPE_NNUM
+			set pc, test_sub__verify_end1
+	ifn [b+1], [a+1]
+	    set pc, error
+    ifn [b+2], [a+2]
+        set pc, error
+    ifn [b+3], [a+3]
+        set pc, error
+
+:test_sub__verify_end1
+    add sp, 2
+    add i, 4
+    set pc, test_sub__loop
+
+:test_sub__break
+
+;----------------------------------------------------------------
+    set j, pass_text
+    jsr screen_print
+
+;----------------------------------------------------------------
 :halt
+;----------------------------------------------------------------
     set pc, halt
 
+;----------------------------------------------------------------
+:error
+;----------------------------------------------------------------
+    set j, fail_text
+    jsr screen_print
+
+    set c, [i]
+    jsr debug
+
+    set pc, halt
+
+:fail_text dat "error: ", 0
+:pass_text dat "pass", 0
+
+;----------------------------------------------------------------
+:detect_hardware
+;----------------------------------------------------------------
+        hwn i
+:detect_hardware__loop
+        ife i, 0
+           set pc, pop
+        sub i, 1
+        hwq i
+        ife a, 0xf615
+            ife b, 0x7349
+                set [monitor], i
+        ife a, 0x7406
+            ife b, 0x30cf
+                set [keyboard], i
+        ife a, 0xb402
+            ife b, 0x12d0
+                set [clock], i
+        ife a, 0x24c5
+            ife b, 0x4fd5
+                set [floppy], i
+        set pc, detect_hardware__loop
+          
+;----------------------------------------------------------------
+:debug
+;----------------------------------------------------------------
+    set push, c
+
+	set c, [sp]
+	shr c, 12
+	and c, 0x000f
+	ifg c, 9
+		add c, 'A'-10
+	ifl c, 10
+		add c, '0'
+	jsr screen_add_char
+	
+	set c, [sp]
+	shr c, 8
+	and c, 0x000f
+	ifg c, 9
+		add c, 'A'-10
+	ifl c, 10
+		add c, '0'
+	jsr screen_add_char
+	
+	set c, [sp]
+	shr c, 4
+	and c, 0x000f
+	ifg c, 9
+		add c, 'A'-10
+	ifl c, 10
+		add c, '0'
+	jsr screen_add_char
+	
+	set c, [sp]
+	shr c, 0
+	and c, 0x000f
+	ifg c, 9
+		add c, 'A'-10
+	ifl c, 10
+		add c, '0'
+	jsr screen_add_char
+
+	;set c, ' '
+	;jsr screen_add_char
+
+    set c, pop	
+	set pc, pop
+
+;----------------------------------------------------------------
+:screen_print
+;----------------------------------------------------------------
+    ife [j], 0
+        set pc, pop
+    set c, [j]
+    jsr screen_add_char
+    add j, 1
+    set pc, screen_print
+
+;----------------------------------------------------------------
+:screen_add_char
+;----------------------------------------------------------------
+    set push, a
+    set a, [cursor_address]
+    set [a], c
+    bor [a], 0x7000
+
+    add [cursor_address], 1
+    ifg [cursor_address], 0x8160
+        set [cursor_address], 0x8000
+
+    set a, pop
+    set pc, pop
+
+;----------------------------------------------------------------
+; HW VARIABLES
+;----------------------------------------------------------------
+:keyboard           DAT 0
+:monitor            DAT 0 
+:clock              DAT 0
+:floppy             DAT 0
+
+:screen_address     DAT 0x8000
+:cursor_address     DAT 0x8000
+;----------------------------------------------------------------
+; TEST DATA
+;----------------------------------------------------------------
 :test_cmp__data 
-dat    f_nan, f_nan, 0
+dat    0x0001, f_nan, f_nan, 0
+dat    0x0002, f_nan, f_pinf, 1
+dat    0x0003, f_nan, f_pzero, 1
+dat    0x0004, f_nan, f_nzero, 1
+dat    0x0005, f_nan, f_ninf, 1
 
-dat    f_nan, f_pinf, 1
-dat    f_nan, f_pzero, 1
-dat    f_nan, f_nzero, 1
-dat    f_nan, f_ninf, 1
+dat    0x0011, f_pinf, f_pinf, 0
+dat    0x0012, f_pinf, f_pzero, 1
+dat    0x0013, f_pinf, f_nzero, 1
+dat    0x0014, f_pinf, f_ninf, 1
 
-dat    f_nan, f_p1_0, 1
-dat    f_nan, f_n1_0, 1
+dat    0x0021, f_pzero, f_pzero, 0
+dat    0x0022, f_pzero, f_nzero, 1
+dat    0x0023, f_pzero, f_ninf, 1
 
-dat    f_pinf, f_p1_0, 1
-dat    f_pinf, f_n1_0, 1
+dat    0x0024, f_nzero, f_nzero, 0
+dat    0x0025, f_nzero, f_ninf, 1
 
-dat    f_ninf, f_p1_0, -1
-dat    f_ninf, f_n1_0, -1
+dat    0x0031, f_ninf, f_ninf, 0
 
-dat    f_pzero, f_p1_0, -1
-dat    f_pzero, f_n1_0, 1
+dat    0x0032, f_nan, f_p1_0, 1
+dat    0x0033, f_nan, f_n1_0, 1
 
-dat    f_nzero, f_p1_0, -1
-dat    f_nzero, f_n1_0, 1
+dat    0x0034, f_pinf, f_p1_0, 1
+dat    0x0035, f_pinf, f_n1_0, 1
 
-dat    f_p10_0, f_p10_0, 0
-dat    f_p10_0, f_p8_0, 1
-dat    f_p10_0, f_p1_0, 1
-dat    f_p10_0, f_n1_0, 1
-dat    f_p10_0, f_n8_0, 1
-dat    f_p10_0, f_n10_0, 1
+dat    0x0036, f_ninf, f_p1_0, -1
+dat    0x0037, f_ninf, f_n1_0, -1
 
-dat    f_p8_0, f_p8_0, 0
-dat    f_p8_0, f_p1_0, 1
-dat    f_p8_0, f_n1_0, 1
-dat    f_p8_0, f_n8_0, 1
-dat    f_p8_0, f_n10_0, 1
+dat    0x0041, f_pzero, f_p1_0, -1
+dat    0x0042, f_pzero, f_n1_0, 1
 
-dat    f_p1_0, f_p1_0, 0
-dat    f_p1_0, f_n1_0, 1
-dat    f_p1_0, f_n8_0, 1
-dat    f_p1_0, f_n10_0, 1
+dat    0x0043, f_nzero, f_p1_0, -1
+dat    0x0044, f_nzero, f_n1_0, 1
 
-dat    f_n1_0, f_n1_0, 0
-dat    f_n1_0, f_n8_0, 1
-dat    f_n1_0, f_n10_0, 1
+dat    0x0051, f_p10_0, f_p10_0, 0
+dat    0x0052, f_p10_0, f_p8_0, 1
+dat    0x0053, f_p10_0, f_p1_0, 1
+dat    0x0054, f_p10_0, f_n1_0, 1
+dat    0x0055, f_p10_0, f_n8_0, 1
+dat    0x0056, f_p10_0, f_n10_0, 1
 
-dat    f_n8_0, f_n8_0, 0
-dat    f_n8_0, f_n10_0, 1
+dat    0x0061, f_p8_0, f_p8_0, 0
+dat    0x0062, f_p8_0, f_p1_0, 1
+dat    0x0063, f_p8_0, f_n1_0, 1
+dat    0x0064, f_p8_0, f_n8_0, 1
+dat    0x0065, f_p8_0, f_n10_0, 1
 
-dat    f_n10_0, f_n10_0, 0
+dat    0x0071, f_p1_0, f_p1_0, 0
+dat    0x0072, f_p1_0, f_n1_0, 1
+dat    0x0073, f_p1_0, f_n8_0, 1
+dat    0x0074, f_p1_0, f_n10_0, 1
 
-dat    -1, -1, -1
+dat    0x0075, f_n1_0, f_n1_0, 0
+dat    0x0076, f_n1_0, f_n8_0, 1
+dat    0x0077, f_n1_0, f_n10_0, 1
+
+dat    0x0078, f_n8_0, f_n8_0, 0
+dat    0x0079, f_n8_0, f_n10_0, 1
+
+dat    0x007a, f_n10_0, f_n10_0, 0
+
+dat    -1, -1, -1, -1
+
+:test_add__data 
+dat    0x1010, f_nan, f_nan, f_nan
+dat    0x1011, f_nan, f_pinf, f_nan
+dat    0x1012, f_nan, f_pzero, f_nan
+dat    0x1013, f_nan, f_nzero, f_nan
+dat    0x1014, f_nan, f_ninf, f_nan
+
+dat    0x1015, f_pinf, f_pinf, f_pinf
+dat    0x1016, f_pinf, f_pzero, f_pinf
+dat    0x1017, f_pinf, f_nzero, f_pinf
+dat    0x1018, f_pinf, f_ninf, f_nan
+
+dat    0x1019, f_pzero, f_pzero, f_pzero
+dat    0x101a, f_pzero, f_nzero, f_pzero
+dat    0x101b, f_pzero, f_ninf, f_ninf
+
+dat    0x101c, f_nzero, f_nzero, f_nzero
+dat    0x101d, f_nzero, f_ninf, f_ninf
+
+dat    0x101e, f_ninf, f_ninf, f_ninf
+
+dat    0x101f, f_nan, f_p1_0, f_nan
+dat    0x1020, f_nan, f_n1_0, f_nan
+
+dat    0x1021, f_pinf, f_p1_0, f_pinf
+dat    0x1022, f_pinf, f_n1_0, f_pinf
+
+dat    0x1023, f_ninf, f_p1_0, f_ninf
+dat    0x1024, f_ninf, f_n1_0, f_ninf
+
+dat    0x1025, f_pzero, f_p1_0, f_p1_0
+dat    0x1026, f_pzero, f_n1_0, f_n1_0
+
+dat    0x1027, f_nzero, f_p1_0, f_p1_0
+dat    0x1028, f_nzero, f_n1_0, f_n1_0
+
+dat    0x1029, f_p10_0, f_n10_0, f_pzero
+dat    0x102a, f_p8_0, f_p2_0, f_p10_0
+dat    0x102b, f_n8_0, f_n2_0, f_n10_0
+dat    0x102c, f_p1_0, f_p1_0, f_p2_0
+dat    0x102d, f_n1_0, f_n1_0, f_n2_0
+
+dat    -1, -1, -1, -1
+
+:test_sub__data 
+dat    0x2010, f_nan, f_nan, f_nan
+dat    0x2011, f_nan, f_pinf, f_nan
+dat    0x2012, f_nan, f_pzero, f_nan
+dat    0x2013, f_nan, f_nzero, f_nan
+dat    0x2014, f_nan, f_ninf, f_nan
+
+dat    0x2015, f_pinf, f_pinf, f_nan
+dat    0x2016, f_pinf, f_pzero, f_pinf
+dat    0x2017, f_pinf, f_nzero, f_pinf
+dat    0x2018, f_pinf, f_ninf, f_pinf
+
+dat    0x2019, f_pzero, f_pzero, f_pzero
+dat    0x201a, f_pzero, f_nzero, f_pzero
+dat    0x201b, f_pzero, f_ninf, f_pinf
+
+dat    0x201c, f_nzero, f_nzero, f_pzero
+dat    0x201d, f_nzero, f_ninf, f_pinf
+
+dat    0x201e, f_ninf, f_ninf, f_nan
+
+dat    0x201f, f_nan, f_p1_0, f_nan
+dat    0x2020, f_nan, f_n1_0, f_nan
+
+dat    0x2021, f_pinf, f_p1_0, f_pinf
+dat    0x2022, f_pinf, f_n1_0, f_pinf
+
+dat    0x2023, f_ninf, f_p1_0, f_ninf
+dat    0x2024, f_ninf, f_n1_0, f_ninf
+
+dat    0x2025, f_pzero, f_p1_0, f_n1_0
+dat    0x2026, f_pzero, f_n1_0, f_p1_0
+
+dat    0x2027, f_nzero, f_p1_0, f_n1_0
+dat    0x2028, f_nzero, f_n1_0, f_p1_0
+
+dat    0x2029, f_n10_0, f_n10_0, f_pzero
+dat    0x202a, f_p10_0, f_p2_0, f_p8_0
+dat    0x202b, f_n8_0, f_p2_0, f_n10_0
+dat    0x202c, f_p1_0, f_n1_0, f_p2_0
+dat    0x202d, f_n1_0, f_p1_0, f_n2_0
+
+dat    -1, -1, -1, -1
 
 :f_nan    dat FLOAT_TYPE_NAN, 0, 0, 0
 :f_pinf   dat FLOAT_TYPE_PINF, 0, 0, 0
@@ -99,6 +437,8 @@ dat    -1, -1, -1
 :f_nzero  dat FLOAT_TYPE_NZERO, 0, 0, 0
 :f_p1_0   dat FLOAT_TYPE_PNUM, 0x7fff, 0x8000, 0x0000
 :f_n1_0   dat FLOAT_TYPE_NNUM, 0x7fff, 0x8000, 0x0000
+:f_p2_0   dat FLOAT_TYPE_PNUM, 0x8000, 0x8000, 0x0000
+:f_n2_0   dat FLOAT_TYPE_NNUM, 0x8000, 0x8000, 0x0000
 :f_p8_0   dat FLOAT_TYPE_PNUM, 0x8002, 0x8000, 0x0000
 :f_n8_0   dat FLOAT_TYPE_NNUM, 0x8002, 0x8000, 0x0000
 :f_p10_0  dat FLOAT_TYPE_PNUM, 0x8002, 0xa000, 0x0000
