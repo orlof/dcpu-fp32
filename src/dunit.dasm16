@@ -1,0 +1,160 @@
+;----------------------------------------------------------------
+; HW VARIABLES
+;----------------------------------------------------------------
+#define DUNIT__SCREEN       0x8000
+
+:dunit__hw_keyboard         dat 0
+:dunit__hw_monitor          dat 0 
+:dunit__hw_clock            dat 0
+:dunit__hw_floppy           dat 0
+
+:dunit__cursor              dat 0x8000
+
+:DUNIT__S_FAIL              dat "fail: ", 0
+:DUNIT__S_PASS              dat "pass", 0
+
+;----------------------------------------------------------------
+:dunit
+;----------------------------------------------------------------
+    ; hardware detection
+    set push, a
+    set push, b
+    set push, i
+
+    hwn i
+:dunit__init__loop
+    ife i, 0
+       set pc, dunit__init__finish
+    sub i, 1
+    hwq i
+    ife a, 0xf615
+        ife b, 0x7349
+            set [dunit__hw_monitor], i
+    ife a, 0x7406
+        ife b, 0x30cf
+            set [dunit__hw_keyboard], i
+    ife a, 0xb402
+        ife b, 0x12d0
+            set [dunit__hw_clock], i
+    ife a, 0x24c5
+        ife b, 0x4fd5
+            set [dunit__hw_floppy], i
+    set pc, dunit__init__loop
+
+:dunit__init__finish
+    set a, 0
+    set b, DUNIT__SCREEN
+    hwi [dunit__hw_monitor]
+
+    set i, pop
+    set b, pop
+    set a, pop
+    set pc, pop
+          
+;----------------------------------------------------------------
+:dunit__print_word
+;----------------------------------------------------------------
+    set push, c
+
+	set c, [sp + 2]
+	shr c, 12
+	and c, 0x000f
+	ifg c, 9
+		add c, 'A'-10
+	ifl c, 10
+		add c, '0'
+	jsr dunit__print_char
+	
+	set c, [sp + 2]
+	shr c, 8
+	and c, 0x000f
+	ifg c, 9
+		add c, 'A'-10
+	ifl c, 10
+		add c, '0'
+	jsr dunit__print_char
+	
+	set c, [sp + 2]
+	shr c, 4
+	and c, 0x000f
+	ifg c, 9
+		add c, 'A'-10
+	ifl c, 10
+		add c, '0'
+	jsr dunit__print_char
+	
+	set c, [sp + 2]
+	shr c, 0
+	and c, 0x000f
+	ifg c, 9
+		add c, 'A'-10
+	ifl c, 10
+		add c, '0'
+	jsr dunit__print_char
+
+    set c, pop	
+    set [sp], pop       ; remove argument
+	set pc, pop
+
+;----------------------------------------------------------------
+:dunit__print_str
+;----------------------------------------------------------------
+    set push, j
+    set j, [sp + 2]
+
+:dunit__print_str__loop
+    ife [j], 0
+        set pc, dunit__print_str__finish
+
+    set push, [j]
+    jsr dunit__print_char
+
+    add j, 1
+    set pc, dunit__print_str__loop
+
+:dunit__print_str__finish
+    set j, pop
+    set [sp], pop       ; remove argument
+    set pc, pop
+
+;----------------------------------------------------------------
+:dunit__print_char
+;----------------------------------------------------------------
+    set push, a
+
+    set a, [dunit__cursor]
+    set [a], [sp + 2]
+    bor [a], 0x7000
+
+    add [dunit__cursor], 1
+    ifg [dunit__cursor], DUNIT__SCREEN + 160
+        set [dunit__cursor], 0x8000
+
+    set a, pop
+    set [sp], pop       ; remove argument
+    set pc, pop
+
+;----------------------------------------------------------------
+:dunit__pass
+;----------------------------------------------------------------
+	set push, DUNIT__S_PASS
+    jsr dunit__print_str
+
+    set pc, _dunit__halt
+
+;----------------------------------------------------------------
+:dunit__fail
+;----------------------------------------------------------------
+    set push, DUNIT__S_FAIL
+    jsr dunit__print_str
+
+    jsr dunit__print_word
+
+    set pc, _dunit__halt
+
+;----------------------------------------------------------------
+:_dunit__halt
+;----------------------------------------------------------------
+    set pc, _dunit__halt
+
+

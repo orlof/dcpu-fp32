@@ -159,32 +159,8 @@
 	;---------------------------------------
 	; check special cases
 	;---------------------------------------
-    ife [i], FLOAT_TYPE_NAN
-        set pc, float__return_nan
-    ife [j], FLOAT_TYPE_NAN
-        set pc, float__return_nan
-
-	set b, [j]
-	add b, 3
-	ifa [j], 0
-		sub b, 1
-	mul b, 6
-	
-	add b, [i]
-	add b, 3
-	ifa [i], 0
-		sub b, 1
-	
-	set pc, [b + float_add__special_values]
-
-:float_add__special_values
-	;   inf,                num,                0.0,                 -0.0,                -num,              -inf
-	dat	float__return_pinf, float__return_pinf, float__return_pinf,  float__return_pinf,  float__return_pinf, float__return_nan  ; inf
-	dat	float__return_pinf, float__add_num,     float__return_j,     float__return_j,     float__add_num,     float__return_ninf ; num
-	dat	float__return_pinf, float__return_i,    float__return_pzero, float__return_pzero, float__return_i,    float__return_ninf ; 0.0
-	dat	float__return_pinf, float__return_i,    float__return_pzero, float__return_nzero, float__return_i,    float__return_ninf ; -0.0
-	dat	float__return_pinf, float__add_num,     float__return_j,     float__return_j,     float__add_num,     float__return_ninf ; -num
-	dat	float__return_nan,  float__return_ninf, float__return_ninf,  float__return_ninf,  float__return_ninf, float__return_ninf ; -inf
+	set a, float_add__special_values
+	set pc, float__special_values
 
 :float__add_num
 	;---------------------------------------
@@ -276,6 +252,40 @@
 		set pc, float__return
 
 	set pc, float__return_inf
+
+
+;----------------------------------------------------------------
+; void float_mul(float *left, float *right, float *result)
+;----------------------------------------------------------------
+:float_mul
+    set push, a                 ; store registers
+    set push, b
+    set push, c
+    set push, i
+    set push, j
+
+	;---------------------------------------
+    ; [sp + 8] float *result
+    ; [sp + 7] float *right
+    ; [sp + 6] float *left
+    ; [sp + 5] rts
+    ; [sp + 4] a
+    ; [sp + 3] b
+    ; [sp + 2] c
+    ; [sp + 1] i
+    ; [sp + 0] j
+
+	set i, [sp + 6]     ; float *left
+	set j, [sp + 7]     ; float *right
+
+	;---------------------------------------
+	; check special cases
+	;---------------------------------------
+	set a, float_mul__special_values
+	set pc, float__special_values
+
+:float__mul_num
+
 
 ;----------------------------------------------------------------
 :float__return_j
@@ -387,6 +397,44 @@
     
 	set a, 32
 	set pc, pop
+
+:float__special_values
+	ife [i], FLOAT_TYPE_NAN
+        set pc, float__return_nan
+    ife [j], FLOAT_TYPE_NAN
+        set pc, float__return_nan
+
+	set b, [j]
+	mli b, 6
+
+	add b, 21
+	ifa [j], 0
+		sub b, 6
+	
+	add b, [i]
+	ifa [i], 0
+		sub b, 1
+
+	add b, a
+	set pc, [b]
+
+:float_add__special_values
+	;   inf,                num,                0.0,                 -0.0,                -num,              -inf
+	dat	float__return_pinf, float__return_pinf, float__return_pinf,  float__return_pinf,  float__return_pinf, float__return_nan  ; inf
+	dat	float__return_pinf, float__add_num,     float__return_j,     float__return_j,     float__add_num,     float__return_ninf ; num
+	dat	float__return_pinf, float__return_i,    float__return_pzero, float__return_pzero, float__return_i,    float__return_ninf ; 0.0
+	dat	float__return_pinf, float__return_i,    float__return_pzero, float__return_nzero, float__return_i,    float__return_ninf ; -0.0
+	dat	float__return_pinf, float__add_num,     float__return_j,     float__return_j,     float__add_num,     float__return_ninf ; -num
+	dat	float__return_nan,  float__return_ninf, float__return_ninf,  float__return_ninf,  float__return_ninf, float__return_ninf ; -inf
+
+:float_mul__special_values
+	;   inf,                num,                 0.0,                 -0.0,                -num,                -inf
+	dat	float__return_pinf, float__return_pinf,  float__return_nan,   float__return_nan,   float__return_ninf,  float__return_ninf ; inf
+	dat	float__return_pinf, float__mul_num,      float__return_pzero, float__return_nzero, float__mul_num,      float__return_ninf ; num
+	dat	float__return_nan,  float__return_pzero, float__return_pzero, float__return_nzero, float__return_nzero, float__return_nan  ; 0.0
+	dat	float__return_nan,  float__return_nzero, float__return_nzero, float__return_pzero, float__return_pzero, float__return_nan  ; -0.0
+	dat	float__return_ninf, float__mul_num,      float__return_nzero, float__return_pzero, float__mul_num,      float__return_pinf ; -num
+	dat	float__return_ninf, float__return_ninf,  float__return_nan,   float__return_nan,   float__return_pinf,  float__return_pinf ; -inf
 
 
 
