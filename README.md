@@ -1,6 +1,6 @@
 --
 <h1>DCPU-FP32</h1>
-<h5><i>3rd Generation Floating Point library for 0x10c DCPU</i></h1>
+<h5><i>3rd Generation Floating Point library for 0x10c DCPU</i></h5>
 --
 
 <h4>Design Philosophy</h4>
@@ -13,20 +13,29 @@
  - caller is responsible for cleaning the stack
  - int16 return value is passes in stack
  - registers a, b, c, i, j, x, y and z are preserved
+
 --
+
 <h4>Installation</h4>
 
 Required files:
+
     defs.dasm16
+
     float.dasm16
 
 Test files (not needed):
+
     test_float.dasm16
+    
     dunit.dasm16
+
 --
+
 <h4>API</h4>
 
 Currently supported operations:
+
     int16 float_cmp(float *left, float *right)
 
     void float_add(float *left, float *right, float *result)
