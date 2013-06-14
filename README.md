@@ -35,13 +35,9 @@ Test files (not needed):
 <h4>API</h4>
 
 Currently supported operations:
-
     int16 float_cmp(float *left, float *right)
-
     void float_add(float *left, float *right, float *result)
-
     void float_sub(float *left, float *right, float *result)
-
     void float_mul(float *left, float *right, float *result)
 
 <pre>
