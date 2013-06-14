@@ -5,8 +5,9 @@
 <h6>Design Philosophy</h6>
  - Easy integration to operating systems and other applications
  - Speed over memory consumption
+ - Easy to understand (and optimize) code base
 
-<h6>Implementation Prinsiples</h6>
+<h6>Implementation Principles</h6>
  - parameters are passed by reference in stack
  - parameters are pushed to stack in right to left order
  - caller is responsible for cleaning the stack
