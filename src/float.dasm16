@@ -1,10 +1,8 @@
+;
 ; Public api functions are marked as extern
 ; Arguments are pushed to stack in right to left
 ; int16 values and memory addresses are returned in stack
-
-
-;TODO ALL RETURN I MAY BE JUST RETURN
-
+;
 
 ;----------------------------------------------------------------
 ; extern int16 float_cmp(float *left, float *right)
@@ -141,20 +139,24 @@
     set push, c
     set push, i
     set push, j
+    set push, z
+
+    set z, sp
 
 	;---------------------------------------
-    ; [sp + 8] float *result
-    ; [sp + 7] float *right
-    ; [sp + 6] float *left
-    ; [sp + 5] rts
-    ; [sp + 4] a
-    ; [sp + 3] b
-    ; [sp + 2] c
-    ; [sp + 1] i
-    ; [sp + 0] j
+    ; [sp + 9] float *result
+    ; [sp + 8] float *right
+    ; [sp + 7] float *left
+    ; [sp + 6] rts
+    ; [sp + 5] a
+    ; [sp + 4] b
+    ; [sp + 3] c
+    ; [sp + 2] i
+    ; [sp + 1] j
+    ; [sp + 0] z
 
-	set i, [sp + 6]     ; float *left
-	set j, [sp + 7]     ; float *right
+	set i, [sp + 7]     ; float *left
+	set j, [sp + 8]     ; float *right
 
 	;---------------------------------------
 	; check special cases
@@ -174,7 +176,7 @@
     ife -1, pop
         set i, j                ; i = float *right
     ife i, j
-        set j, [sp + 6]         ; j = float *left
+        set j, [sp + 7]         ; j = float *left
 
 	;---------------------------------------
 	; align exponents
@@ -196,7 +198,7 @@
 	shr a, c
 
     ; copy max(left, right) to result
-    set c, [sp + 8]
+    set c, [sp + 9]
     set [c + FLOAT_TYPE], [i + FLOAT_TYPE]
     set [c + FLOAT_EXP], [i + FLOAT_EXP]
     set [c + FLOAT_HIGH], [i + FLOAT_HIGH]
@@ -217,7 +219,7 @@
             set pc, float__return_pzero
 	
 	; normalize result
-	jsr nlz
+	jsr float__nlz32
 	
 	shl [c + FLOAT_HIGH], a
 	shl [c + FLOAT_LOW], a
@@ -263,20 +265,26 @@
     set push, c
     set push, i
     set push, j
+    set push, z
+
+    set z, sp
 
 	;---------------------------------------
-    ; [sp + 8] float *result
-    ; [sp + 7] float *right
-    ; [sp + 6] float *left
-    ; [sp + 5] rts
-    ; [sp + 4] a
-    ; [sp + 3] b
-    ; [sp + 2] c
-    ; [sp + 1] i
-    ; [sp + 0] j
+    ; [sp + 9] float *result
+    ; [sp + 8] float *right
+    ; [sp + 7] float *left
+    ; [sp + 6] rts
+    ; [sp + 5] a
+    ; [sp + 4] b
+    ; [sp + 3] c
+    ; [sp + 2] i
+    ; [sp + 1] j
+    ; [sp + 0] z
 
-	set i, [sp + 6]     ; float *left
-	set j, [sp + 7]     ; float *right
+	set i, [sp + 7]     ; float *left
+	set j, [sp + 8]     ; float *right
+
+    sub sp, 6
 
 	;---------------------------------------
 	; check special cases
@@ -284,16 +292,95 @@
 	set a, float_mul__special_values
 	set pc, float__special_values
 
-:float__mul_num
+:float__mul_nnum
+    set [sp + FLOAT_TYPE], FLOAT_TYPE_NNUM
+    set pc, float__mul_num
 
+:float__mul_pnum
+    set [sp + FLOAT_TYPE], FLOAT_TYPE_PNUM
+
+:float__mul_num
+	;---------------------------------------
+	; calculate exponent
+	;---------------------------------------
+	; is all this really needed to detect overflow?
+    set a, [i + FLOAT_EXP]
+    sub a, FLOAT_EXP_BIAS    		; remove bias
+
+	set b, [j + FLOAT_EXP]
+    sub b, FLOAT_EXP_BIAS    		; remove bias
+
+	set c, a			    		; calculate sum to c
+    add c, b
+     
+    xor a, c			    		; does arg1.exp and result.exp have different sign
+    xor b, c			    		; does arg2.exp and result.exp have different sign
+    and a, b		    			; both operands have different sign than sum
+
+	; value for overflow exit
+	set b, float__return_zero		; assume underflow as default 
+	ifg [i + FLOAT_EXP], 0x8000	    ; if exp>0 then assume overflow
+		set b, float__return_inf
+
+	ifb a, 0x8000				    ; finally test overflow
+      set pc, b					    ; and act accordingly
+
+	add c, FLOAT_EXP_BIAS + 1	    ; restore bias
+	set [sp + FLOAT_EXP], c	        ; set exponent
+
+	;---------------------------------------
+	; calculate mantissa
+	;---------------------------------------
+    set [sp + FLOAT_LOW + 2], [j + FLOAT_LOW]
+    mul [sp + FLOAT_LOW + 2], [i + FLOAT_LOW]
+
+	set [sp + FLOAT_LOW + 1], ex
+    
+    set a, [i + FLOAT_HIGH]
+    mul a, [j + FLOAT_LOW]
+    set [sp + FLOAT_LOW], ex
+	add [sp + FLOAT_LOW + 1], a
+	add [sp + FLOAT_LOW], ex
+
+	set a, [i + FLOAT_LOW]
+	mul a, [j + FLOAT_HIGH]
+	add [sp + FLOAT_LOW], ex
+	set [sp + FLOAT_HIGH], ex
+	add [sp + FLOAT_LOW + 1], a
+	add [sp + FLOAT_LOW], ex
+	add [sp + FLOAT_HIGH], ex
+	
+	set a, [i + FLOAT_HIGH]
+	mul a, [j + FLOAT_HIGH]
+	add [sp + FLOAT_HIGH], ex
+	add [sp + FLOAT_LOW], a
+	add [sp + FLOAT_HIGH], ex
+
+	;---------------------------------------
+    ; normalize result
+	;---------------------------------------
+    ifb [sp + FLOAT_HIGH], 0x8000
+        set pc, float__mul__no_normalize
+
+	shl [sp + FLOAT_HIGH], 1
+	shl [sp + FLOAT_LOW], 1
+	bor [sp + FLOAT_HIGH], ex
+    ifb [sp + FLOAT_LOW + 1], 0x8000
+        bor [sp + FLOAT_LOW], 0x0001
+
+	sub [sp + FLOAT_EXP], 1
+    
+:float__mul__no_normalize
+    set i, sp
+    set pc, float__return_i
 
 ;----------------------------------------------------------------
 :float__return_j
     set i, j
 
 :float__return_i
-    set j, [sp + 8]
-    set [j], [i]
+    set j, [z + 9]
+    set [j + FLOAT_TYPE], [i + FLOAT_TYPE]
     set [j + FLOAT_EXP], [i + FLOAT_EXP]
     set [j + FLOAT_HIGH], [i + FLOAT_HIGH]
     set [j + FLOAT_LOW], [i + FLOAT_LOW]
@@ -306,7 +393,7 @@
 
 ;----------------------------------------------------------------
 :float__return_inf
-    set a, FLOAT_TYPE_NINF
+    set a, FLOAT_TYPE_PINF
     set pc, float__return_abs_a_type
 ;----------------------------------------------------------------
 :float__return_pinf
@@ -332,15 +419,18 @@
 
 ;----------------------------------------------------------------
 :float__return_abs_a_type
-    set i, [sp + 8]
+    set i, [z + 9]
     ifa [i], 0
         mli a, -1
 
 :float__return_a_type
-    set i, [sp + 8]
+    set i, [z + 9]
     set [i], a
 
+;----------------------------------------------------------------
 :float__return
+    set sp, z
+    set z, pop
 	set j, pop
 	set i, pop
 	set c, pop
@@ -350,43 +440,43 @@
 	set pc, pop
 
 ;----------------------------------------------------------------
-:nlz
+:float__nlz32
 ; fastcall
-;  i: float *f
+;  c: float *f
 ; return
-;  c: number of leading zeroes
-;  a: garbage
+;  a: number of leading zeroes
+;  b: garbage
 ;----------------------------------------------------------------
 	set a, 0
 	set b, [c + FLOAT_HIGH]
 	ifb b, 0xffff
-		set pc, nlz16
+		set pc, float__nlz16
 
 	set a, 16
 	set b, [c + FLOAT_LOW]
 
-:nlz16
+:float__nlz16
 	ifb b, 0xff00
-		set pc, nlz8
+		set pc, float__nlz8
 
 	add a, 8
 	shl b, 8
 	
-:nlz8
+:float__nlz8
 	ifb b, 0xf000
-		set pc, nlz4
+		set pc, float__nlz4
 
 	add a, 4
 	shl b, 4
 
-:nlz4
+:float__nlz4
 	ifb b, 0xc000
-		set pc, nlz2
+		set pc, float__nlz2
 
 	add a, 2
 	shl b, 2
 
-:nlz2
+:float__nlz2
 	ifb b, 0x8000
 		set pc, pop
 
@@ -430,14 +520,11 @@
 :float_mul__special_values
 	;   inf,                num,                 0.0,                 -0.0,                -num,                -inf
 	dat	float__return_pinf, float__return_pinf,  float__return_nan,   float__return_nan,   float__return_ninf,  float__return_ninf ; inf
-	dat	float__return_pinf, float__mul_num,      float__return_pzero, float__return_nzero, float__mul_num,      float__return_ninf ; num
+	dat	float__return_pinf, float__mul_pnum,     float__return_pzero, float__return_nzero, float__mul_nnum,     float__return_ninf ; num
 	dat	float__return_nan,  float__return_pzero, float__return_pzero, float__return_nzero, float__return_nzero, float__return_nan  ; 0.0
 	dat	float__return_nan,  float__return_nzero, float__return_nzero, float__return_pzero, float__return_pzero, float__return_nan  ; -0.0
-	dat	float__return_ninf, float__mul_num,      float__return_nzero, float__return_pzero, float__mul_num,      float__return_pinf ; -num
+	dat	float__return_ninf, float__mul_nnum,     float__return_nzero, float__return_pzero, float__mul_pnum,     float__return_pinf ; -num
 	dat	float__return_ninf, float__return_ninf,  float__return_nan,   float__return_nan,   float__return_pinf,  float__return_pinf ; -inf
 
 
-
-
-	
 

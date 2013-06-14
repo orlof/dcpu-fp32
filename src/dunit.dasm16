@@ -63,6 +63,7 @@
 		add c, 'A'-10
 	ifl c, 10
 		add c, '0'
+    set push, c
 	jsr dunit__print_char
 	
 	set c, [sp + 2]
@@ -72,6 +73,7 @@
 		add c, 'A'-10
 	ifl c, 10
 		add c, '0'
+    set push, c
 	jsr dunit__print_char
 	
 	set c, [sp + 2]
@@ -81,6 +83,7 @@
 		add c, 'A'-10
 	ifl c, 10
 		add c, '0'
+    set push, c
 	jsr dunit__print_char
 	
 	set c, [sp + 2]
@@ -90,6 +93,7 @@
 		add c, 'A'-10
 	ifl c, 10
 		add c, '0'
+    set push, c
 	jsr dunit__print_char
 
     set c, pop	
@@ -145,6 +149,7 @@
 ;----------------------------------------------------------------
 :dunit__fail
 ;----------------------------------------------------------------
+	set push, [i]
     set push, DUNIT__S_FAIL
     jsr dunit__print_str
 

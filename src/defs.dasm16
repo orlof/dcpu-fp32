@@ -13,4 +13,5 @@
 #define FLOAT_HIGH			2
 #define FLOAT_LOW			3
 
+#define FLOAT_EXP_BIAS      0x7fff
 

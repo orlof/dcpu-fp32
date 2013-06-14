@@ -55,6 +55,9 @@
     set [a+2], 0
     set [a+3], 0
 
+	ife [i], 0x1041
+		set x,x
+
     set push, [i+2]
     set push, [i+1]
     jsr float_add
@@ -142,6 +145,70 @@
     set pc, test_sub__loop
 
 :test_sub__break
+	add sp, 1
+
+;----------------------------------------------------------------
+:test__mul
+    set i, test_mul__data
+    set a, f_result
+    set push, a
+
+:test_mul__loop
+    ife [i], -1
+        set pc, test_mul__break
+
+    set [a], 0
+    set [a+1], 0
+    set [a+2], 0
+    set [a+3], 0
+
+    set push, [i+2]
+    set push, [i+1]
+    jsr float_mul
+
+    set b, [i+3]
+    ifn [b], [a]
+        set pc, dunit__fail
+	ifn [b], FLOAT_TYPE_PNUM
+		ifn [b], FLOAT_TYPE_NNUM
+			set pc, test_mul__verify_end1
+	ifn [b+1], [a+1]
+        set pc, dunit__fail
+    ifn [b+2], [a+2]
+        set pc, dunit__fail
+    ifn [b+3], [a+3]
+        set pc, dunit__fail
+
+:test_mul__verify_end1
+    add sp, 2
+
+    set [a], 0
+    set [a+1], 0
+    set [a+2], 0
+    set [a+3], 0
+
+    set push, [i+1]
+    set push, [i+2]
+    jsr float_mul
+
+    ifn [b], [a]
+        set pc, dunit__fail
+	ifn [b], FLOAT_TYPE_PNUM
+		ifn [b], FLOAT_TYPE_NNUM
+			set pc, test_mul__verify_end2
+	ifn [b+1], [a+1]
+        set pc, dunit__fail
+    ifn [b+2], [a+2]
+        set pc, dunit__fail
+    ifn [b+3], [a+3]
+        set pc, dunit__fail
+
+:test_mul__verify_end2
+    add sp, 2
+    add i, 4
+    set pc, test_mul__loop
+
+:test_mul__break
 	add sp, 1
 
 ;----------------------------------------------------------------
@@ -296,6 +363,8 @@ dat    0x0078, f_n8_0, f_n8_0, 0
 dat    0x0079, f_n8_0, f_n10_0, 1
 
 dat    0x007a, f_n10_0, f_n10_0, 0
+dat    0x0080, f_pmax, f_p10_0, 1
+dat    0x0080, f_pmin, f_p10_0, -1
 
 dat    -1, -1, -1, -1
 
@@ -346,6 +415,12 @@ dat    0x1031, f_p8_0, f_n10_0, f_n2_0
 dat    0x1032, f_n1_0, f_p2_0, f_p1_0
 dat    0x1033, f_p1_0, f_n2_0, f_n1_0
 
+dat    0x1040, f_pmax, f_pmin, f_pmax
+dat    0x1041, f_pmax, f_pmax, f_pinf
+dat    0x1042, f_nmax, f_nmax, f_ninf
+dat    0x1043, f_pmax, f_nmax, f_pzero
+dat    0x1044, f_pmin, f_nmin, f_pzero
+
 dat    -1, -1, -1, -1
 
 :test_sub__data 
@@ -395,6 +470,53 @@ dat    0x2031, f_n8_0, f_n10_0, f_p2_0
 dat    0x2032, f_n1_0, f_n2_0, f_p1_0
 dat    0x2033, f_p1_0, f_p2_0, f_n1_0
 
+dat    0x2040, f_pmax, f_pmax, f_pzero
+dat    0x2041, f_nmax, f_nmax, f_pzero
+dat    0x2042, f_pmin, f_pmin, f_pzero
+dat    0x2043, f_nmin, f_nmin, f_pzero
+
+dat    -1, -1, -1, -1
+
+:test_mul__data 
+dat    0x4010, f_nan, f_nan, f_nan
+dat    0x4011, f_nan, f_pinf, f_nan
+dat    0x4012, f_nan, f_pzero, f_nan
+dat    0x4013, f_nan, f_nzero, f_nan
+dat    0x4014, f_nan, f_ninf, f_nan
+
+dat    0x4015, f_pinf, f_pinf, f_pinf
+dat    0x4016, f_pinf, f_pzero, f_nan
+dat    0x4017, f_pinf, f_nzero, f_nan
+dat    0x4018, f_pinf, f_ninf, f_ninf
+
+dat    0x4019, f_pzero, f_pzero, f_pzero
+dat    0x401a, f_pzero, f_nzero, f_nzero
+dat    0x401b, f_pzero, f_ninf, f_nan
+
+dat    0x401c, f_nzero, f_nzero, f_pzero
+dat    0x401d, f_nzero, f_ninf, f_nan
+
+dat    0x401e, f_ninf, f_ninf, f_pinf
+
+dat    0x401f, f_nan, f_p1_0, f_nan
+dat    0x4020, f_nan, f_n1_0, f_nan
+
+dat    0x4021, f_pinf, f_p1_0, f_pinf
+dat    0x4022, f_pinf, f_n1_0, f_ninf
+
+dat    0x4023, f_ninf, f_p1_0, f_ninf
+dat    0x4024, f_ninf, f_n1_0, f_pinf
+
+dat    0x4025, f_pzero, f_p1_0, f_pzero
+dat    0x4026, f_pzero, f_n1_0, f_nzero
+
+dat    0x4027, f_nzero, f_p1_0, f_nzero
+dat    0x4028, f_nzero, f_n1_0, f_pzero
+
+dat    0x4029, f_p2_0, f_p2_0, f_p4_0
+dat    0x402a, f_p2_0, f_n2_0, f_n4_0
+dat    0x40ab, f_n2_0, f_n2_0, f_p4_0
+
 dat    -1, -1, -1, -1
 
 :test_overwrite__data 
@@ -417,10 +539,16 @@ dat    -1, -1, -1, -1, -1, -1, -1
 :f_n1_0   dat FLOAT_TYPE_NNUM, 0x7fff, 0x8000, 0x0000
 :f_p2_0   dat FLOAT_TYPE_PNUM, 0x8000, 0x8000, 0x0000
 :f_n2_0   dat FLOAT_TYPE_NNUM, 0x8000, 0x8000, 0x0000
+:f_p4_0   dat FLOAT_TYPE_PNUM, 0x8001, 0x8000, 0x0000
+:f_n4_0   dat FLOAT_TYPE_NNUM, 0x8001, 0x8000, 0x0000
 :f_p8_0   dat FLOAT_TYPE_PNUM, 0x8002, 0x8000, 0x0000
 :f_n8_0   dat FLOAT_TYPE_NNUM, 0x8002, 0x8000, 0x0000
 :f_p10_0  dat FLOAT_TYPE_PNUM, 0x8002, 0xa000, 0x0000
 :f_n10_0  dat FLOAT_TYPE_NNUM, 0x8002, 0xa000, 0x0000
+:f_pmax   dat FLOAT_TYPE_PNUM, 0xffff, 0xffff, 0xffff
+:f_nmax   dat FLOAT_TYPE_NNUM, 0xffff, 0xffff, 0xffff
+:f_pmin   dat FLOAT_TYPE_PNUM, 0x0000, 0x8000, 0x0000
+:f_nmin   dat FLOAT_TYPE_NNUM, 0x0000, 0x8000, 0x0000
 :f_left   dat 0,0,0,0
 :f_right  dat 0,0,0,0
 :f_result dat 0,0,0,0
