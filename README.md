@@ -35,12 +35,12 @@ Test files (not needed):
 <h4>API</h4>
 
 Currently supported operations:
+<pre>
     int16 float_cmp(float *left, float *right)
     void float_add(float *left, float *right, float *result)
     void float_sub(float *left, float *right, float *result)
     void float_mul(float *left, float *right, float *result)
 
-<pre>
 Example (2 + 3) * 3
   set push, float_left    ; rightmost argument: result
   set push, float_right   ; second argument: right
