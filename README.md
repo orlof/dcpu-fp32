@@ -1,13 +1,12 @@
---
 <h1>DCPU-FP32</h1>
 <h5><i>3rd Generation Floating Point library for 0x10c DCPU</i></h5>
 --
 
-<h4>Design Philosophy</h4>
+<h6>Design Philosophy</h6>
  - Easy integration to operating systems and other applications
  - Speed over memory consumption
 
-<h4>Implementation Prinsiples</h4>
+<h6>Implementation Prinsiples</h6>
  - parameters are passed by reference in stack
  - parameters are pushed to stack in right to left order
  - caller is responsible for cleaning the stack
@@ -16,7 +15,7 @@
 
 --
 
-<h4>Installation</h4>
+<h6>Installation</h6>
 
 Required files:
 
@@ -32,7 +31,7 @@ Test files (not needed):
 
 --
 
-<h4>API</h4>
+<h6>API</h6>
 
 Currently supported operations:
 <pre>
@@ -51,7 +50,7 @@ Example (2 + 3) * 3
 </pre>
 --
 
-<h4>Number Format</h4>
+<h6>Number Format</h6>
 
 Each floating point number takes 4 words
 
