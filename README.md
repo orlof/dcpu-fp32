@@ -36,10 +36,10 @@ Test files (not needed):
 
 Currently supported operations:
 <pre>
-    int16 float_cmp(float *left, float *right)
-    void float_add(float *left, float *right, float *result)
-    void float_sub(float *left, float *right, float *result)
-    void float_mul(float *left, float *right, float *result)
+  int16 float_cmp(float *left, float *right)
+  void float_add(float *left, float *right, float *result)
+  void float_sub(float *left, float *right, float *result)
+  void float_mul(float *left, float *right, float *result)
 
 Example (2 + 3) * 3
   set push, float_left    ; rightmost argument: result
@@ -64,7 +64,9 @@ Each floating point number takes 4 words
         #define FLOAT_TYPE_NNUM   2
         #define FLOAT_TYPE_NINF   3
     [1] FLOAT_EXP
-        Exponent with 0x7fff bias (1.0 has exponent 0x7fff)
+        Exponent with 0x8000 bias (1.0 has exponent 0x8000)
+        NA if FLOAT_TYPE is not NNUM or PNUM
     [2-3] FLOAT_HIGH:FLOAT_LOW
         Normalized mantissa with msb always set
+        NA if FLOAT_TYPE is not NNUM or PNUM
 
