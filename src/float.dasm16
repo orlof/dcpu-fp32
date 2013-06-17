@@ -131,7 +131,7 @@
     set pc, pop
 
 ;----------------------------------------------------------------
-; void float_add(float *left, float *right, float *result)
+; extern void float_add(float *left, float *right, float *result)
 ;----------------------------------------------------------------
 :float_add
     set push, a                 ; store registers
@@ -257,7 +257,7 @@
 
 
 ;----------------------------------------------------------------
-; void float_mul(float *left, float *right, float *result)
+; extern void float_mul(float *left, float *right, float *result)
 ;----------------------------------------------------------------
 :float_mul
     set push, a                 ; store registers
@@ -286,12 +286,11 @@
 
     sub sp, 6
 
-	;---------------------------------------
 	; check special cases
-	;---------------------------------------
 	set a, float_mul__special_values
 	set pc, float__special_values
 
+	;---------------------------------------
 :float__mul_nnum
     set [sp + FLOAT_TYPE], FLOAT_TYPE_NNUM
     set pc, float__mul_num
@@ -318,9 +317,9 @@
     and a, b		    			; both operands have different sign than sum
 
 	; value for overflow exit
-	set b, float__return_zero		; assume underflow as default 
-	ifg [i + FLOAT_EXP], 0x8000	    ; if exp>0 then assume overflow
-		set b, float__return_inf
+	set b, float__return_inf		; assume overflow as default 
+	ifl [i + FLOAT_EXP], FLOAT_EXP_BIAS ; ...unless exp<0 then assume underflow
+		set b, float__return_zero
 
 	ifb a, 0x8000				    ; finally test overflow
       set pc, b					    ; and act accordingly
@@ -374,6 +373,169 @@
     set i, sp
     set pc, float__return_i
 
+
+;----------------------------------------------------------------
+; extern void float_div(float *left, float *right, float *result)
+;----------------------------------------------------------------
+:float_div
+    set push, a                 ; store registers
+    set push, b
+    set push, c
+    set push, i
+    set push, j
+    set push, z
+
+    set z, sp
+
+	set i, [sp + 7]     ; float *left
+	set j, [sp + 8]     ; float *right
+
+	; copy divident mantissa to stack
+	set push, [i + FLOAT_LOW]
+	set push, [i + FLOAT_HIGH]
+	
+	; allocate space for quotient
+    sub sp, 4
+
+	;---------------------------------------
+    ; [sp +15] float *result
+    ; [sp +14] float *right
+    ; [sp +13] float *left
+    ; [sp +12] rts
+    ; [sp +11] a
+    ; [sp +10] b
+    ; [sp + 9] c
+    ; [sp + 8] i
+    ; [sp + 7] j
+    ; [sp + 6] z
+    ; [sp + 5] divident.low
+    ; [sp + 4] divident.high
+    ; [sp + 3] quotient.low
+    ; [sp + 2] quotient.high
+    ; [sp + 1] quotient.exp
+    ; [sp + 0] quotient.type
+
+	; check special cases
+	set a, float_div__special_values
+	set pc, float__special_values
+
+	;---------------------------------------
+:float__div_nnum
+    set [sp + FLOAT_TYPE], FLOAT_TYPE_NNUM
+    set pc, float__div_num
+
+:float__div_pnum
+    set [sp + FLOAT_TYPE], FLOAT_TYPE_PNUM
+
+:float__div_num
+	;---------------------------------------
+	; calculate exponent
+	;---------------------------------------
+	; is all this really needed to detect overflow?
+    set a, [i + FLOAT_EXP]          ; divident exponent
+    sub a, FLOAT_EXP_BIAS    		; remove bias
+
+	set b, [j + FLOAT_EXP]          ; divisor exponent
+    sub b, FLOAT_EXP_BIAS    		; remove bias
+
+	set c, a			    		; quotient.exp = divident.exp - divisor.exp
+    sub c, b
+     
+	; signed arithmetic overflow test
+	; c = a + b -> "((a ^ c) & (b ^ c)) < 0"
+    xor a, c			    		; does arg1.exp and result.exp have different sign
+    xor b, c			    		; does arg2.exp and result.exp have different sign
+    and a, b		    			; both operands have different sign than sum
+
+	; value for overflow exit
+	set b, float__return_inf		; assume overflow as default 
+	ifl [i + FLOAT_EXP], FLOAT_EXP_BIAS ; ...unless exp<0 then assume underflow
+		set b, float__return_zero
+
+	ifb a, 0x8000				    ; test overflow
+      set pc, b					    ; ...and return
+
+	add c, FLOAT_EXP_BIAS		    ; restore bias
+	set [sp + FLOAT_EXP], c	        ; set exponent
+
+	; [sp + 5] divident.low
+	; [sp + 4] divident.high
+	; [sp + 0] quotient
+	; [j]      divisor
+	; a        current quotient word
+	; b        temp
+	; c        current quotient word number
+
+	set a, 1 ; set sentinel
+	set c, 0 ; current word number
+
+:float__div__cmp
+	; see if divisor can be subtracted from divident
+	; b=1 can, b=0 cannot
+	set b, 1
+
+	ife [sp + 4], [j + FLOAT_HIGH]
+		ifl [sp + 5], [j + FLOAT_LOW]
+			set b, 0
+	
+	ifl [sp + 4], [j + FLOAT_HIGH]
+		set b, 0
+
+:float__div__next_bit
+    ; shift quotient
+	shl a, 1
+	bor a, b
+
+	ife 0, ex						; no sentinel out
+		set pc, float__div__no_word
+
+	ifn c, 0						; all words completed?
+		set pc, float__div__normalize
+
+	set c, 1
+	set [sp + FLOAT_HIGH], a 		; store high word
+	set a, 1 						; restart sentinel
+
+:float__div__no_word
+	ife b, 0 						; do subtract if possible
+		set pc, float__div__shift_divident
+
+	; subtract
+	sub [sp + 5], [j + FLOAT_LOW]
+	sbx [sp + 4], [j + FLOAT_HIGH]
+
+:float__div__shift_divident
+	shl [sp + 4], 1
+	set b, ex
+	shl [sp + 5], 1
+	bor [sp + 4], ex
+
+	ife b, 1
+		set pc, float__div__next_bit
+
+;   optional optimization
+;	ifc [sp + 4], 0x8000
+;		set pc, float__div__next_bit
+
+	set pc, float__div__cmp		
+
+:float__div__normalize
+	set [sp + FLOAT_LOW], a
+
+	set c, sp
+	set i, sp
+	jsr float__nlz32
+	
+	shl [c + FLOAT_HIGH], a
+	shl [c + FLOAT_LOW], a
+	bor [c + FLOAT_HIGH], ex
+	
+	sub [c + FLOAT_EXP], a
+	ife ex, 0
+		set pc, float__return_i
+		
+	set pc, float__return_zero
+
 ;----------------------------------------------------------------
 :float__return_j
     set i, j
@@ -389,6 +551,11 @@
 ;----------------------------------------------------------------
 :float__return_nan
     set a, FLOAT_TYPE_NAN
+	set pc, float__return_a_type
+
+;----------------------------------------------------------------
+:float__return_dbz
+    set a, FLOAT_TYPE_DBZ
 	set pc, float__return_a_type
 
 ;----------------------------------------------------------------
@@ -525,6 +692,15 @@
 	dat	float__return_nan,  float__return_nzero, float__return_nzero, float__return_pzero, float__return_pzero, float__return_nan  ; -0.0
 	dat	float__return_ninf, float__mul_nnum,     float__return_nzero, float__return_pzero, float__mul_pnum,     float__return_pinf ; -num
 	dat	float__return_ninf, float__return_ninf,  float__return_nan,   float__return_nan,   float__return_pinf,  float__return_pinf ; -inf
+
+:float_div__special_values
+	;   inf,                num,                 0.0,                 -0.0,                -num,                -inf
+	dat	float__return_nan,  float__return_pzero, float__return_pzero, float__return_nzero, float__return_nzero, float__return_nan  ; inf
+	dat	float__return_pinf, float__div_pnum,     float__return_pzero, float__return_nzero, float__div_nnum,     float__return_ninf ; num
+	dat	float__return_dbz,  float__return_dbz,   float__return_dbz,   float__return_dbz,   float__return_dbz,   float__return_dbz  ; 0.0
+	dat	float__return_dbz,  float__return_dbz,   float__return_dbz,   float__return_dbz,   float__return_dbz,   float__return_dbz  ; -0.0
+	dat	float__return_ninf, float__div_nnum,     float__return_nzero, float__return_pzero, float__div_pnum,     float__return_pinf ; -num
+	dat	float__return_nan,  float__return_nzero, float__return_nzero, float__return_pzero, float__return_pzero, float__return_nan  ; -inf
 
 
 

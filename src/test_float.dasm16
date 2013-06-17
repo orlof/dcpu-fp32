@@ -212,6 +212,47 @@
 	add sp, 1
 
 ;----------------------------------------------------------------
+:test__div
+    set i, test_div__data
+    set a, f_result
+    set push, a
+
+:test_div__loop
+    ife [i], -1
+        set pc, test_div__break
+
+    set [a], 0
+    set [a+1], 0
+    set [a+2], 0
+    set [a+3], 0
+
+    set push, [i+2]
+    set push, [i+1]
+    jsr float_div
+
+    set b, [i+3]
+    ifn [b], [a]
+        set pc, dunit__fail
+	ifn [b], FLOAT_TYPE_PNUM
+		ifn [b], FLOAT_TYPE_NNUM
+			set pc, test_div__verify_end1
+	ifn [b+1], [a+1]
+        set pc, dunit__fail
+    ifn [b+2], [a+2]
+        set pc, dunit__fail
+    ifn [b+3], [a+3]
+        set pc, dunit__fail
+
+:test_div__verify_end1
+    add sp, 2
+
+    add i, 4
+    set pc, test_div__loop
+
+:test_div__break
+	add sp, 1
+
+;----------------------------------------------------------------
 :test__overwrite
     set i, test_overwrite__data
 
@@ -519,6 +560,48 @@ dat    0x40ab, f_n2_0, f_n2_0, f_p4_0
 
 dat    -1, -1, -1, -1
 
+:test_div__data 
+dat    0x4010, f_nan, f_nan, f_nan
+dat    0x4011, f_nan, f_pinf, f_nan
+dat    0x4012, f_nan, f_pzero, f_nan
+dat    0x4013, f_nan, f_nzero, f_nan
+dat    0x4014, f_nan, f_ninf, f_nan
+
+dat    0x4015, f_pinf, f_pinf, f_nan
+dat    0x4016, f_pinf, f_pzero, f_dbz
+dat    0x4017, f_pinf, f_nzero, f_dbz
+dat    0x4018, f_pinf, f_ninf, f_nan
+
+dat    0x4019, f_pzero, f_pzero, f_dbz
+dat    0x401a, f_pzero, f_nzero, f_dbz
+dat    0x401b, f_pzero, f_ninf, f_nzero
+
+dat    0x401c, f_nzero, f_nzero, f_dbz
+dat    0x401d, f_nzero, f_ninf, f_pzero
+
+dat    0x401e, f_ninf, f_ninf, f_nan
+
+dat    0x401f, f_nan, f_p1_0, f_nan
+dat    0x4020, f_nan, f_n1_0, f_nan
+
+dat    0x4021, f_pinf, f_p1_0, f_pinf
+dat    0x4022, f_pinf, f_n1_0, f_ninf
+
+dat    0x4023, f_ninf, f_p1_0, f_ninf
+dat    0x4024, f_ninf, f_n1_0, f_pinf
+
+dat    0x4025, f_pzero, f_p1_0, f_pzero
+dat    0x4026, f_pzero, f_n1_0, f_nzero
+
+dat    0x4027, f_nzero, f_p1_0, f_nzero
+dat    0x4028, f_nzero, f_n1_0, f_pzero
+
+dat    0x4029, f_p4_0, f_p2_0, f_p2_0
+dat    0x402a, f_p4_0, f_n2_0, f_n2_0
+dat    0x40ab, f_n4_0, f_n2_0, f_p2_0
+
+dat    -1, -1, -1, -1
+
 :test_overwrite__data 
 dat    0x3001, float_add, f_result, f_result, f_result, f_p2_0, f_p2_0, f_p2_0
 dat    0x3002, float_add, f_left, f_result, f_result, f_p1_0, f_p2_0, f_p2_0
@@ -530,21 +613,22 @@ dat    0x3013, float_sub, f_result, f_right, f_result, f_pzero, f_p1_0, f_pzero
 dat    0x3014, float_sub, f_left, f_left, f_result, f_p1_0, f_p1_0, f_pzero
 dat    -1, -1, -1, -1, -1, -1, -1
 
+:f_dbz    dat FLOAT_TYPE_DBZ, 0, 0, 0
 :f_nan    dat FLOAT_TYPE_NAN, 0, 0, 0
 :f_pinf   dat FLOAT_TYPE_PINF, 0, 0, 0
 :f_ninf   dat FLOAT_TYPE_NINF, 0, 0, 0
 :f_pzero  dat FLOAT_TYPE_PZERO, 0, 0, 0
 :f_nzero  dat FLOAT_TYPE_NZERO, 0, 0, 0
-:f_p1_0   dat FLOAT_TYPE_PNUM, 0x7fff, 0x8000, 0x0000
-:f_n1_0   dat FLOAT_TYPE_NNUM, 0x7fff, 0x8000, 0x0000
-:f_p2_0   dat FLOAT_TYPE_PNUM, 0x8000, 0x8000, 0x0000
-:f_n2_0   dat FLOAT_TYPE_NNUM, 0x8000, 0x8000, 0x0000
-:f_p4_0   dat FLOAT_TYPE_PNUM, 0x8001, 0x8000, 0x0000
-:f_n4_0   dat FLOAT_TYPE_NNUM, 0x8001, 0x8000, 0x0000
-:f_p8_0   dat FLOAT_TYPE_PNUM, 0x8002, 0x8000, 0x0000
-:f_n8_0   dat FLOAT_TYPE_NNUM, 0x8002, 0x8000, 0x0000
-:f_p10_0  dat FLOAT_TYPE_PNUM, 0x8002, 0xa000, 0x0000
-:f_n10_0  dat FLOAT_TYPE_NNUM, 0x8002, 0xa000, 0x0000
+:f_p1_0   dat FLOAT_TYPE_PNUM, 0x8000, 0x8000, 0x0000
+:f_n1_0   dat FLOAT_TYPE_NNUM, 0x8000, 0x8000, 0x0000
+:f_p2_0   dat FLOAT_TYPE_PNUM, 0x8001, 0x8000, 0x0000
+:f_n2_0   dat FLOAT_TYPE_NNUM, 0x8001, 0x8000, 0x0000
+:f_p4_0   dat FLOAT_TYPE_PNUM, 0x8002, 0x8000, 0x0000
+:f_n4_0   dat FLOAT_TYPE_NNUM, 0x8002, 0x8000, 0x0000
+:f_p8_0   dat FLOAT_TYPE_PNUM, 0x8003, 0x8000, 0x0000
+:f_n8_0   dat FLOAT_TYPE_NNUM, 0x8003, 0x8000, 0x0000
+:f_p10_0  dat FLOAT_TYPE_PNUM, 0x8003, 0xa000, 0x0000
+:f_n10_0  dat FLOAT_TYPE_NNUM, 0x8003, 0xa000, 0x0000
 :f_pmax   dat FLOAT_TYPE_PNUM, 0xffff, 0xffff, 0xffff
 :f_nmax   dat FLOAT_TYPE_NNUM, 0xffff, 0xffff, 0xffff
 :f_pmin   dat FLOAT_TYPE_PNUM, 0x0000, 0x8000, 0x0000
