@@ -76,13 +76,14 @@ Example (2 + 3) * 3
 Each floating point number takes 4 words
 
     [0] FLOAT_TYPE:
-        #define FLOAT_TYPE_NAN   0x8000
-        #define FLOAT_TYPE_PINF  -3
-        #define FLOAT_TYPE_PNUM  -2
-        #define FLOAT_TYPE_PZERO -1
-        #define FLOAT_TYPE_NZERO  1
-        #define FLOAT_TYPE_NNUM   2
-        #define FLOAT_TYPE_NINF   3
+        FLOAT_TYPE_NAN   0x8000
+        FLOAT_TYPE_PINF  -3
+        FLOAT_TYPE_PNUM  -2
+        FLOAT_TYPE_PZERO -1
+        FLOAT_TYPE_DBZ    0     (Divide By Zero error)
+        FLOAT_TYPE_NZERO  1
+        FLOAT_TYPE_NNUM   2
+        FLOAT_TYPE_NINF   3
     [1] FLOAT_EXP
         Exponent with 0x8000 bias (1.0 has exponent 0x8000)
         NA if FLOAT_TYPE is not NNUM or PNUM
