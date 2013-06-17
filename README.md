@@ -42,11 +42,31 @@ Currently supported operations:
   void float_mul(float *left, float *right, float *result)
 
 Example (2 + 3) * 3
-  set push, float_left    ; rightmost argument: result
-  set push, float_right   ; second argument: right
-  set push, float_left    ; leftmost argument: left
+
+  ; simple implementation
+  set push, float_result
+  set push, float_3
+  set push, float_2
+  jst float_add
+  
+  add sp, 3               ; cleanup
+
+  set push, float_result
+  set push, float_3
+  set push, float_result
+  jsr float_mul
+  
+  add sp, 3
+  
+
+  ; optimized implementation
+  set push, float_result
+  set push, float_3
+  set push, float_2
   jsr float_add
-  jsr float_mul           ; result is now in float_left
+
+  set [sp], float_result
+  jsr float_mul
   add sp, 3
 </pre>
 --
