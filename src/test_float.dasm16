@@ -41,6 +41,142 @@
 :test_cmp__break
 
 ;----------------------------------------------------------------
+:test__negate
+    set i, test_negate__data
+    set a, f_result
+
+:test_negate__loop
+    ife [i], -1
+        set pc, test_negate__break
+
+    set [a], 0
+    set [a+1], 0
+    set [a+2], 0
+    set [a+3], 0
+
+    set push, a
+    set push, [i+1]
+    jsr float_negate
+
+    set b, [i+2]
+    ifn [b], [a]
+        set pc, dunit__fail
+	ifn [b], FLOAT_TYPE_PNUM
+		ifn [b], FLOAT_TYPE_NNUM
+			set pc, test_negate__continue
+	ifn [b+1], [a+1]
+        set pc, dunit__fail
+    ifn [b+2], [a+2]
+        set pc, dunit__fail
+    ifn [b+3], [a+3]
+        set pc, dunit__fail
+
+:test_negate__continue
+    add sp, 2
+    add i, 3
+    set pc, test_negate__loop
+
+:test_negate__break
+
+;----------------------------------------------------------------
+:test__fuint
+    set i, test_fuint__data
+    set a, f_result
+
+:test_fuint__loop
+    ife [i], -1
+        set pc, test_fuint__break
+
+    set [a], 0
+    set [a+1], 0
+    set [a+2], 0
+    set [a+3], 0
+
+    set push, a
+    set push, [i+1]
+    jsr float_from_uint16
+
+    set b, [i+2]
+    ifn [b], [a]
+        set pc, dunit__fail
+	ifn [b], FLOAT_TYPE_PNUM
+		ifn [b], FLOAT_TYPE_NNUM
+			set pc, test_fuint__continue
+	ifn [b+1], [a+1]
+        set pc, dunit__fail
+    ifn [b+2], [a+2]
+        set pc, dunit__fail
+    ifn [b+3], [a+3]
+        set pc, dunit__fail
+
+:test_fuint__continue
+    add sp, 2
+    add i, 3
+    set pc, test_fuint__loop
+
+:test_fuint__break
+
+;----------------------------------------------------------------
+:test__tuint
+    set i, test_tuint__data
+
+:test_tuint__loop
+    ife [i], -1
+        set pc, test_tuint__break
+
+    set push, [i+1]
+    jsr float_to_uint16
+
+    set a, pop
+    ifn a, [i + 2]
+        set pc, dunit__fail
+
+:test_tuint__continue
+    add sp, 1
+    add i, 3
+    set pc, test_tuint__loop
+
+:test_tuint__break
+
+;----------------------------------------------------------------
+:test__abs
+    set i, test_abs__data
+    set a, f_result
+
+:test_abs__loop
+    ife [i], -1
+        set pc, test_abs__break
+
+    set [a], 0
+    set [a+1], 0
+    set [a+2], 0
+    set [a+3], 0
+
+    set push, a
+    set push, [i+1]
+    jsr float_abs
+
+    set b, [i+2]
+    ifn [b], [a]
+        set pc, dunit__fail
+	ifn [b], FLOAT_TYPE_PNUM
+		ifn [b], FLOAT_TYPE_NNUM
+			set pc, test_abs__continue
+	ifn [b+1], [a+1]
+        set pc, dunit__fail
+    ifn [b+2], [a+2]
+        set pc, dunit__fail
+    ifn [b+3], [a+3]
+        set pc, dunit__fail
+
+:test_abs__continue
+    add sp, 2
+    add i, 3
+    set pc, test_abs__loop
+
+:test_abs__break
+
+;----------------------------------------------------------------
 :test__add
     set i, test_add__data
     set a, f_result
@@ -561,44 +697,44 @@ dat    0x40ab, f_n2_0, f_n2_0, f_p4_0
 dat    -1, -1, -1, -1
 
 :test_div__data 
-dat    0x4010, f_nan, f_nan, f_nan
-dat    0x4011, f_nan, f_pinf, f_nan
-dat    0x4012, f_nan, f_pzero, f_nan
-dat    0x4013, f_nan, f_nzero, f_nan
-dat    0x4014, f_nan, f_ninf, f_nan
+dat    0x5010, f_nan, f_nan, f_nan
+dat    0x5011, f_nan, f_pinf, f_nan
+dat    0x5012, f_nan, f_pzero, f_nan
+dat    0x5013, f_nan, f_nzero, f_nan
+dat    0x5014, f_nan, f_ninf, f_nan
 
-dat    0x4015, f_pinf, f_pinf, f_nan
-dat    0x4016, f_pinf, f_pzero, f_dbz
-dat    0x4017, f_pinf, f_nzero, f_dbz
-dat    0x4018, f_pinf, f_ninf, f_nan
+dat    0x5015, f_pinf, f_pinf, f_nan
+dat    0x5016, f_pinf, f_pzero, f_dbz
+dat    0x5017, f_pinf, f_nzero, f_dbz
+dat    0x5018, f_pinf, f_ninf, f_nan
 
-dat    0x4019, f_pzero, f_pzero, f_dbz
-dat    0x401a, f_pzero, f_nzero, f_dbz
-dat    0x401b, f_pzero, f_ninf, f_nzero
+dat    0x5019, f_pzero, f_pzero, f_dbz
+dat    0x501a, f_pzero, f_nzero, f_dbz
+dat    0x501b, f_pzero, f_ninf, f_nzero
 
-dat    0x401c, f_nzero, f_nzero, f_dbz
-dat    0x401d, f_nzero, f_ninf, f_pzero
+dat    0x501c, f_nzero, f_nzero, f_dbz
+dat    0x501d, f_nzero, f_ninf, f_pzero
 
-dat    0x401e, f_ninf, f_ninf, f_nan
+dat    0x501e, f_ninf, f_ninf, f_nan
 
-dat    0x401f, f_nan, f_p1_0, f_nan
-dat    0x4020, f_nan, f_n1_0, f_nan
+dat    0x501f, f_nan, f_p1_0, f_nan
+dat    0x5020, f_nan, f_n1_0, f_nan
 
-dat    0x4021, f_pinf, f_p1_0, f_pinf
-dat    0x4022, f_pinf, f_n1_0, f_ninf
+dat    0x5021, f_pinf, f_p1_0, f_pinf
+dat    0x5022, f_pinf, f_n1_0, f_ninf
 
-dat    0x4023, f_ninf, f_p1_0, f_ninf
-dat    0x4024, f_ninf, f_n1_0, f_pinf
+dat    0x5023, f_ninf, f_p1_0, f_ninf
+dat    0x5024, f_ninf, f_n1_0, f_pinf
 
-dat    0x4025, f_pzero, f_p1_0, f_pzero
-dat    0x4026, f_pzero, f_n1_0, f_nzero
+dat    0x5025, f_pzero, f_p1_0, f_pzero
+dat    0x5026, f_pzero, f_n1_0, f_nzero
 
-dat    0x4027, f_nzero, f_p1_0, f_nzero
-dat    0x4028, f_nzero, f_n1_0, f_pzero
+dat    0x5027, f_nzero, f_p1_0, f_nzero
+dat    0x5028, f_nzero, f_n1_0, f_pzero
 
-dat    0x4029, f_p4_0, f_p2_0, f_p2_0
-dat    0x402a, f_p4_0, f_n2_0, f_n2_0
-dat    0x40ab, f_n4_0, f_n2_0, f_p2_0
+dat    0x5029, f_p4_0, f_p2_0, f_p2_0
+dat    0x502a, f_p4_0, f_n2_0, f_n2_0
+dat    0x50ab, f_n4_0, f_n2_0, f_p2_0
 
 dat    -1, -1, -1, -1
 
@@ -612,6 +748,45 @@ dat    0x3012, float_sub, f_left, f_result, f_result, f_p1_0, f_pzero, f_pzero
 dat    0x3013, float_sub, f_result, f_right, f_result, f_pzero, f_p1_0, f_pzero
 dat    0x3014, float_sub, f_left, f_left, f_result, f_p1_0, f_p1_0, f_pzero
 dat    -1, -1, -1, -1, -1, -1, -1
+
+:test_negate__data 
+dat    0x5101, f_nan, f_nan
+dat    0x5102, f_pinf, f_ninf
+dat    0x5103, f_pzero, f_nzero
+dat    0x5104, f_p1_0, f_n1_0
+dat    0x5105, f_p10_0, f_n10_0
+dat    -1, -1, -1
+
+:test_fuint__data 
+dat    0x5301, 0, f_pzero
+dat    0x5302, 1, f_p1_0
+dat    0x5303, 2, f_p2_0
+dat    0x5304, 10, f_p10_0
+dat    -1, -1, -1
+
+:test_tuint__data 
+dat    0x5401, f_nan, 0
+dat    0x5402, f_pinf, 0
+dat    0x5403, f_pzero, 0
+dat    0x5404, f_nzero, 0
+dat    0x5405, f_ninf, 0
+dat    0x5406, f_p1_0, 1
+dat    0x5407, f_p10_0, 10
+dat    0x5408, f_n1_0, 0
+dat    0x5409, f_n10_0, 0
+dat    -1, -1, -1
+
+:test_abs__data 
+dat    0x5201, f_nan, f_nan
+dat    0x5202, f_pinf, f_pinf
+dat    0x5202, f_ninf, f_pinf
+dat    0x5203, f_pzero, f_pzero
+dat    0x5203, f_nzero, f_pzero
+dat    0x5204, f_p1_0, f_p1_0
+dat    0x5204, f_n1_0, f_p1_0
+dat    0x5205, f_p10_0, f_p10_0
+dat    0x5205, f_n10_0, f_p10_0
+dat    -1, -1, -1
 
 :f_dbz    dat FLOAT_TYPE_DBZ, 0, 0, 0
 :f_nan    dat FLOAT_TYPE_NAN, 0, 0, 0

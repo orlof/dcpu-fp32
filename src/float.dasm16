@@ -5,6 +5,155 @@
 ;
 
 ;----------------------------------------------------------------
+; extern void float_negate(float *src, float *dst)
+; - _partly_ overlapping src and dst is not supported (e.g. src=dst+1)
+;----------------------------------------------------------------
+:float_negate
+    set push, i                 ; store registers
+    set push, j
+
+	;---------------------------------------
+    ; [sp + 4] dst
+    ; [sp + 3] src
+    ; [sp + 2] rts
+    ; [sp + 1] i
+    ; [sp + 0] j
+	;---------------------------------------
+
+	set i, [sp + 3]             ; float *src
+	set j, [sp + 4]             ; float *dst
+
+	sti [j], [i]				; type
+	sti [j], [i]				; exp
+	sti [j], [i]				; high
+	sti [j], [i]				; low
+
+	mli [j - 4], -1
+
+	set j, pop
+	set i, pop
+	set pc, pop
+	
+;----------------------------------------------------------------
+; extern void float_abs(float *src, float *dst)
+; - _partly_ overlapping src and dst is not supported (e.g. src=dst+1)
+;----------------------------------------------------------------
+:float_abs
+    set push, i                 ; store registers
+    set push, j
+
+	;---------------------------------------
+    ; [sp + 4] dst
+    ; [sp + 3] src
+    ; [sp + 2] rts
+    ; [sp + 1] i
+    ; [sp + 0] j
+	;---------------------------------------
+
+	set i, [sp + 3]             ; float *src
+	set j, [sp + 4]             ; float *dst
+
+	sti [j], [i]				; type
+	sti [j], [i]				; exp
+	sti [j], [i]				; high
+	sti [j], [i]				; low
+
+	ifa [i - 4], 0
+		mli [j - 4], -1
+
+	set j, pop
+	set i, pop
+	set pc, pop
+
+;----------------------------------------------------------------
+; extern void float_from_uint16(uint16 value, float *dst)
+;----------------------------------------------------------------
+:float_from_uint16
+	set push, a
+	set push, b
+	set push, c
+
+	;---------------------------------------
+    ; [sp + 5] dst
+    ; [sp + 4] value
+    ; [sp + 3] rts
+    ; [sp + 2] a
+    ; [sp + 1] b
+    ; [sp + 0] c
+	;---------------------------------------
+
+	set c, [sp + 5]
+
+	set [c], FLOAT_TYPE_PNUM
+	set [c + 1], 0x801f
+	set [c + 2], 0
+	set [c + 3], [sp + 4]
+	
+	; normalize result
+	jsr float__nlz32
+	
+	shl [c + FLOAT_HIGH], a
+	shl [c + FLOAT_LOW], a
+	bor [c + FLOAT_HIGH], ex
+	
+	sub [c + FLOAT_EXP], a
+	
+	ife a, 32
+		set [c], FLOAT_TYPE_PZERO
+
+	set c, pop
+	set b, pop
+	set a, pop
+	set pc, pop	
+
+;----------------------------------------------------------------
+; extern uint16 float_from_uint16(float *src)
+;----------------------------------------------------------------
+:float_to_uint16
+	set push, [sp]
+
+	set push, a
+	set push, b
+
+	;---------------------------------------
+    ; [sp + 4] src
+    ; [sp + 3] return value
+    ; [sp + 2] rts
+    ; [sp + 1] a
+    ; [sp + 0] b
+	;---------------------------------------
+
+	set a, [sp + 4]
+	
+	ifa [a], FLOAT_TYPE_PNUM
+		set pc, float_to_uint16__return_zero
+	
+	ifu [a], FLOAT_TYPE_PNUM
+		set pc, float_to_uint16__return_zero
+
+	ifa [a + FLOAT_EXP], 0x800f
+		set pc, float_to_uint16__return_zero
+
+	ifu [a + FLOAT_EXP], 0x8000
+		set pc, float_to_uint16__return_zero
+
+	set b, 0x800f
+	sub b, [a + FLOAT_EXP]
+
+	set [sp + 3], [a + FLOAT_HIGH]
+	shr [sp + 3], b
+	
+	set pc, float_to_uint16__return
+
+:float_to_uint16__return_zero
+	set [sp + 3], 0
+
+:float_to_uint16__return
+	set b, pop
+	set a, pop
+	set pc, pop	
+
+;----------------------------------------------------------------
 ; extern int16 float_cmp(float *left, float *right)
 ;----------------------------------------------------------------
 :float_cmp
@@ -57,40 +206,6 @@
     set j, pop
     set i, pop
 	set pc, pop
-
-
-;----------------------------------------------------------------
-:_float_cmp_abs
-; fastcall
-;  i: float *left
-;  j: float *right
-; return
-;  [sp]: 
-;    1 if abs(left) > abs(right)
-;    0 if abs(left) == abs(right)
-;   -1 if abs(left) < abs(right)
-;----------------------------------------------------------------
-    set push, [sp]
-    set [sp+1], 0
-    ; compare low
-	ifg [i + FLOAT_LOW], [j + FLOAT_LOW]
-        set [sp + 1], 1
-	ifl [i + FLOAT_LOW], [j + FLOAT_LOW]
-        set [sp + 1], -1
-
-    ; compare high
-	ifg [i + FLOAT_HIGH], [j + FLOAT_HIGH]
-        set [sp + 1], 1
-	ifl [i + FLOAT_HIGH], [j + FLOAT_HIGH]
-        set [sp + 1], -1
-
-    ; compare exp
-	ifg [i + FLOAT_EXP], [j + FLOAT_EXP]
-        set [sp + 1], 1
-	ifl [i + FLOAT_EXP], [j + FLOAT_EXP]
-        set [sp + 1], -1
-
-    set pc, pop
 
 ;----------------------------------------------------------------
 ; extern void float_sub(float *left, float *right, float *result)
@@ -162,7 +277,7 @@
 	; check special cases
 	;---------------------------------------
 	set a, float_add__special_values
-	set pc, float__special_values
+	set pc, _float__special_values
 
 :float__add_num
 	;---------------------------------------
@@ -288,7 +403,7 @@
 
 	; check special cases
 	set a, float_mul__special_values
-	set pc, float__special_values
+	set pc, _float__special_values
 
 	;---------------------------------------
 :float__mul_nnum
@@ -417,7 +532,7 @@
 
 	; check special cases
 	set a, float_div__special_values
-	set pc, float__special_values
+	set pc, _float__special_values
 
 	;---------------------------------------
 :float__div_nnum
@@ -655,7 +770,47 @@
 	set a, 32
 	set pc, pop
 
-:float__special_values
+;----------------------------------------------------------------
+:_float_cmp_abs
+; fastcall
+;  i: float *left
+;  j: float *right
+; return
+;  [sp]: 
+;    1 if abs(left) > abs(right)
+;    0 if abs(left) == abs(right)
+;   -1 if abs(left) < abs(right)
+;----------------------------------------------------------------
+    set push, [sp]
+    set [sp+1], 0
+    ; compare low
+	ifg [i + FLOAT_LOW], [j + FLOAT_LOW]
+        set [sp + 1], 1
+	ifl [i + FLOAT_LOW], [j + FLOAT_LOW]
+        set [sp + 1], -1
+
+    ; compare high
+	ifg [i + FLOAT_HIGH], [j + FLOAT_HIGH]
+        set [sp + 1], 1
+	ifl [i + FLOAT_HIGH], [j + FLOAT_HIGH]
+        set [sp + 1], -1
+
+    ; compare exp
+	ifg [i + FLOAT_EXP], [j + FLOAT_EXP]
+        set [sp + 1], 1
+	ifl [i + FLOAT_EXP], [j + FLOAT_EXP]
+        set [sp + 1], -1
+
+    set pc, pop
+
+;----------------------------------------------------------------
+:_float__special_values
+; fastcall
+;   a        pointer to special value table
+;   i        float *f1
+;   j        float *f2
+; pollutes: b
+;----------------------------------------------------------------
 	ife [i], FLOAT_TYPE_NAN
         set pc, float__return_nan
     ife [j], FLOAT_TYPE_NAN
