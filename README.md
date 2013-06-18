@@ -36,17 +36,37 @@ Test files (not needed):
 
 Currently supported operations:
 <pre>
-    int16 float_cmp(float *left, float *right)
-    void float_add(float *left, float *right, float *result)
-    void float_sub(float *left, float *right, float *result)
-    void float_mul(float *left, float *right, float *result)
+  int16 float_cmp(float *left, float *right)
+  void float_add(float *left, float *right, float *result)
+  void float_sub(float *left, float *right, float *result)
+  void float_mul(float *left, float *right, float *result)
 
 Example (2 + 3) * 3
-  set push, float_left    ; rightmost argument: result
-  set push, float_right   ; second argument: right
-  set push, float_left    ; leftmost argument: left
+
+  ; simple implementation
+  set push, float_result
+  set push, float_3
+  set push, float_2
+  jst float_add
+  
+  add sp, 3               ; cleanup
+
+  set push, float_result
+  set push, float_3
+  set push, float_result
+  jsr float_mul
+  
+  add sp, 3
+  
+
+  ; optimized implementation
+  set push, float_result
+  set push, float_3
+  set push, float_2
   jsr float_add
-  jsr float_mul           ; result is now in float_left
+
+  set [sp], float_result
+  jsr float_mul
   add sp, 3
 </pre>
 --
@@ -56,15 +76,18 @@ Example (2 + 3) * 3
 Each floating point number takes 4 words
 
     [0] FLOAT_TYPE:
-        #define FLOAT_TYPE_NAN   0x8000
-        #define FLOAT_TYPE_PINF  -3
-        #define FLOAT_TYPE_PNUM  -2
-        #define FLOAT_TYPE_PZERO -1
-        #define FLOAT_TYPE_NZERO  1
-        #define FLOAT_TYPE_NNUM   2
-        #define FLOAT_TYPE_NINF   3
+        FLOAT_TYPE_NAN   0x8000
+        FLOAT_TYPE_PINF  -3
+        FLOAT_TYPE_PNUM  -2
+        FLOAT_TYPE_PZERO -1
+        FLOAT_TYPE_DBZ    0     (Divide By Zero error)
+        FLOAT_TYPE_NZERO  1
+        FLOAT_TYPE_NNUM   2
+        FLOAT_TYPE_NINF   3
     [1] FLOAT_EXP
-        Exponent with 0x7fff bias (1.0 has exponent 0x7fff)
+        Exponent with 0x8000 bias (1.0 has exponent 0x8000)
+        NA if FLOAT_TYPE is not NNUM or PNUM
     [2-3] FLOAT_HIGH:FLOAT_LOW
         Normalized mantissa with msb always set
+        NA if FLOAT_TYPE is not NNUM or PNUM
 
