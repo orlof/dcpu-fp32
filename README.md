@@ -43,10 +43,10 @@ Running Tested Features
   void float_div(float *left, float *right, float *result)
 
 Implemented, but not tested
-  uint16 float_from_uint16(float *src)
+  uint16 float_to_uint16(float *src)
   void float_from_uint16(uint16 value, float *dst)
   void float_negate(float *src, float *dst)
-  void float_negate(float *src, float *dst)
+  void float_abs(float *src, float *dst)
 
 Candidates for future development
   sqrt
