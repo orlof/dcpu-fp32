@@ -3,9 +3,9 @@
 --
 
 <h6>Design Philosophy</h6>
- - Easy integration to operating systems and other applications
+ - Easy integration to DCPU's operating systems and applications
+ - Easile maintainable code base
  - Speed over memory consumption
- - Easy to understand (and optimize) code base
 
 <h6>Implementation Principles</h6>
  - parameters are passed by reference in stack
@@ -34,12 +34,26 @@ Test files (not needed):
 
 <h6>API</h6>
 
-Currently supported operations:
 <pre>
+Running Tested Features
   int16 float_cmp(float *left, float *right)
   void float_add(float *left, float *right, float *result)
   void float_sub(float *left, float *right, float *result)
   void float_mul(float *left, float *right, float *result)
+
+Implemented, but not tested
+  uint16 float_from_uint16(float *src)
+  void float_from_uint16(uint16 value, float *dst)
+  void float_negate(float *src, float *dst)
+  void float_negate(float *src, float *dst)
+
+Candidates for future development
+  sqrt
+  pow
+  sin, cos, tan
+  float_from_str
+  float_to_str
+  
 
 Example (2 + 3) * 3
 
