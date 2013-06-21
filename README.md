@@ -40,6 +40,7 @@ Running Tested Features
   void float_add(float *left, float *right, float *result)
   void float_sub(float *left, float *right, float *result)
   void float_mul(float *left, float *right, float *result)
+  void float_div(float *left, float *right, float *result)
 
 Implemented, but not tested
   uint16 float_from_uint16(float *src)
