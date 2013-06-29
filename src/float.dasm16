@@ -6,62 +6,72 @@
 
 ;----------------------------------------------------------------
 ; extern void float_negate(float *src, float *dst)
-; - _partly_ overlapping src and dst is not supported (e.g. src=dst+1)
 ;----------------------------------------------------------------
 :float_negate
     set push, i                 ; store registers
-    set push, j
 
 	;---------------------------------------
-    ; [sp + 4] dst
-    ; [sp + 3] src
-    ; [sp + 2] rts
-    ; [sp + 1] i
-    ; [sp + 0] j
+    ; [sp + 3] dst
+    ; [sp + 2] src
+    ; [sp + 1] rts
+    ; [sp + 0] i
 	;---------------------------------------
 
-	set i, [sp + 3]             ; float *src
-	set j, [sp + 4]             ; float *dst
+	; copy src to stack
+	set i, [sp + 2]             ; float *src
+	
+	set push, [i + 3]
+	set push, [i + 2]
+	set push, [i + 1]
+	set push, [i]
+	
+	; copy stack to dst
+	set i, [sp + 7]             ; float *dst
 
-	sti [j], [i]				; type
-	sti [j], [i]				; exp
-	sti [j], [i]				; high
-	sti [j], [i]				; low
+	set [i], pop
+	set [i + 1], pop
+	set [i + 2], pop
+	set [i + 3], pop
 
-	mli [j - 4], -1
+	; change sign
+	mli [i], -1
 
-	set j, pop
 	set i, pop
 	set pc, pop
 	
 ;----------------------------------------------------------------
 ; extern void float_abs(float *src, float *dst)
-; - _partly_ overlapping src and dst is not supported (e.g. src=dst+1)
 ;----------------------------------------------------------------
 :float_abs
     set push, i                 ; store registers
-    set push, j
 
 	;---------------------------------------
-    ; [sp + 4] dst
-    ; [sp + 3] src
-    ; [sp + 2] rts
-    ; [sp + 1] i
-    ; [sp + 0] j
+    ; [sp + 3] dst
+    ; [sp + 2] src
+    ; [sp + 1] rts
+    ; [sp + 0] i
 	;---------------------------------------
 
-	set i, [sp + 3]             ; float *src
-	set j, [sp + 4]             ; float *dst
+	; copy src to stack
+	set i, [sp + 2]             ; float *src
+	
+	set push, [i + 3]
+	set push, [i + 2]
+	set push, [i + 1]
+	set push, [i]
+	
+	; copy stack to dst
+	set i, [sp + 7]             ; float *dst
 
-	sti [j], [i]				; type
-	sti [j], [i]				; exp
-	sti [j], [i]				; high
-	sti [j], [i]				; low
+	set [i], pop
+	set [i + 1], pop
+	set [i + 2], pop
+	set [i + 3], pop
 
-	ifa [i - 4], 0
-		mli [j - 4], -1
+	; change sign
+	ifa [i], 0
+		mli [i], -1
 
-	set j, pop
 	set i, pop
 	set pc, pop
 
@@ -728,6 +738,7 @@
 ; return
 ;  a: number of leading zeroes
 ;  b: garbage
+; cycles: 43
 ;----------------------------------------------------------------
 	set a, 0
 	set b, [c + FLOAT_HIGH]
@@ -780,6 +791,7 @@
 ;    1 if abs(left) > abs(right)
 ;    0 if abs(left) == abs(right)
 ;   -1 if abs(left) < abs(right)
+; cycles: 36
 ;----------------------------------------------------------------
     set push, [sp]
     set [sp+1], 0
@@ -809,7 +821,8 @@
 ;   a        pointer to special value table
 ;   i        float *f1
 ;   j        float *f2
-; pollutes: b
+; cycles: 27
+; clobbers: b
 ;----------------------------------------------------------------
 	ife [i], FLOAT_TYPE_NAN
         set pc, float__return_nan
