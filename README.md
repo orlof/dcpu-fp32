@@ -1,5 +1,5 @@
 <h1>DCPU-FP32</h1>
-<h5><i>3rd Generation Floating Point library for 0x10c DCPU</i></h5>
+<h5><i>3rd Generation Floating Point library for DCPU</i></h5>
 --
 
 <h6>Design Philosophy</h6>
