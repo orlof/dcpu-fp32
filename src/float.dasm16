@@ -1,32 +1,32 @@
 ;
 ; Public api functions are marked as extern
-; Arguments are pushed to stack in right to left
-; int16 values and memory addresses are returned in stack
+; Arguments are pushed to stack in right to left order
+; int16 values are returned in stack
 ;
 
 ;----------------------------------------------------------------
-; extern void float_negate(float *src, float *dst)
+; extern void float_negate(float *value, float *result)
 ;----------------------------------------------------------------
 :float_negate
     set push, i                 ; store registers
 
 	;---------------------------------------
-    ; [sp + 3] dst
-    ; [sp + 2] src
+    ; [sp + 3] result
+    ; [sp + 2] value
     ; [sp + 1] rts
     ; [sp + 0] i
 	;---------------------------------------
 
-	; copy src to stack
-	set i, [sp + 2]             ; float *src
+	; copy value to stack
+	set i, [sp + 2]             ; float *value
 	
 	set push, [i + 3]
 	set push, [i + 2]
 	set push, [i + 1]
 	set push, [i]
 	
-	; copy stack to dst
-	set i, [sp + 7]             ; float *dst
+	; copy stack to result
+	set i, [sp + 7]             ; float *result
 
 	set [i], pop
 	set [i + 1], pop
@@ -40,28 +40,28 @@
 	set pc, pop
 	
 ;----------------------------------------------------------------
-; extern void float_abs(float *src, float *dst)
+; extern void float_abs(float *value, float *result)
 ;----------------------------------------------------------------
 :float_abs
     set push, i                 ; store registers
 
 	;---------------------------------------
-    ; [sp + 3] dst
-    ; [sp + 2] src
+    ; [sp + 3] result
+    ; [sp + 2] value
     ; [sp + 1] rts
     ; [sp + 0] i
 	;---------------------------------------
 
-	; copy src to stack
-	set i, [sp + 2]             ; float *src
+	; copy value to stack
+	set i, [sp + 2]             ; float *value
 	
 	set push, [i + 3]
 	set push, [i + 2]
 	set push, [i + 1]
 	set push, [i]
 	
-	; copy stack to dst
-	set i, [sp + 7]             ; float *dst
+	; copy stack to result
+	set i, [sp + 7]             ; float *result
 
 	set [i], pop
 	set [i + 1], pop
@@ -76,7 +76,7 @@
 	set pc, pop
 
 ;----------------------------------------------------------------
-; extern void float_from_uint16(uint16 value, float *dst)
+; extern void float_from_uint16(uint16 value, float *result)
 ;----------------------------------------------------------------
 :float_from_uint16
 	set push, a
@@ -84,7 +84,7 @@
 	set push, c
 
 	;---------------------------------------
-    ; [sp + 5] dst
+    ; [sp + 5] result
     ; [sp + 4] value
     ; [sp + 3] rts
     ; [sp + 2] a
@@ -117,17 +117,17 @@
 	set pc, pop	
 
 ;----------------------------------------------------------------
-; extern uint16 float_from_uint16(float *src)
+; extern uint16 float_to_uint16(float *value)
 ;----------------------------------------------------------------
 :float_to_uint16
-	set push, [sp]
+    set push, [sp]              ; make room for return value
 
 	set push, a
 	set push, b
 
 	;---------------------------------------
-    ; [sp + 4] src
-    ; [sp + 3] return value
+    ; [sp + 4] value
+    ; [sp + 3] result
     ; [sp + 2] rts
     ; [sp + 1] a
     ; [sp + 0] b
@@ -173,9 +173,9 @@
     set push, j
 
 	;---------------------------------------
-    ; [sp + 5] 2. arg
-    ; [sp + 4] 1. arg
-    ; [sp + 3] return value
+    ; [sp + 5] right
+    ; [sp + 4] left
+    ; [sp + 3] result
     ; [sp + 2] rts
     ; [sp + 1] i
     ; [sp + 0] j
