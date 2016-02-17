@@ -34,57 +34,57 @@ Test files (not needed):
 
 <h6>API</h6>
 
-<pre>
-Running Tested Features
-  int16 float_cmp(float *left, float *right)
-  void float_add(float *left, float *right, float *result)
-  void float_sub(float *left, float *right, float *result)
-  void float_mul(float *left, float *right, float *result)
-  void float_div(float *left, float *right, float *result)
-  uint16 float_to_uint16(float *src)
-  void float_from_uint16(uint16 value, float *dst)
-  void float_negate(float *src, float *dst)
-  void float_abs(float *src, float *dst)
+    int16 float_cmp(float *left, float *right)
+    void float_add(float *left, float *right, float *result)
+    void float_sub(float *left, float *right, float *result)
+    void float_mul(float *left, float *right, float *result)
+    void float_div(float *left, float *right, float *result)
+    uint16 float_to_uint16(float *src)
+    void float_from_uint16(uint16 value, float *dst)
+    void float_negate(float *src, float *dst)
+    void float_abs(float *src, float *dst)
 
-Candidates for future development
-  sqrt
-  pow
-  sin, cos, tan
-  float_from_str
-  float_to_str
-  
+<h6>Candidates for future development</h6>
 
-Example (2 + 4) * 2
+    sqrt
+    pow
+    sin, cos, tan
+    float_from_str
+    float_to_str
 
-  #include "defs.dasm16"
+<h6>Example</h6>
 
-  :f_result dat 0,0,0,0
-  :f_2      dat FLOAT_TYPE_PNUM, 0x8001, 0x8000, 0x0000
-  :f_4      dat FLOAT_TYPE_PNUM, 0x8002, 0x8000, 0x0000
-
-  ; API calls
-  set push, f_result      ; push result address
-  set push, f_4           ; push 4.0 address
-  set push, f_2           ; push 2.0 address
-  jst float_add
-  
-  add sp, 3               ; cleanup stack
-
-  set push, f_result      ; push result address
-  set push, f_2           ; push 2.0 address
-  set push, f_result      ; push (2 + 4) result address
+    ; calculate (2 + 4) * 2
+    
+    #include "defs.dasm16"
+    
+    :f_result dat 0,0,0,0
+    :f_2      dat FLOAT_TYPE_PNUM, 0x8001, 0x8000, 0x0000
+    :f_4      dat FLOAT_TYPE_PNUM, 0x8002, 0x8000, 0x0000
+    
+    ; API calls
+    set push, f_result      ; push result address
+    set push, f_4           ; push 4.0 address
+    set push, f_2           ; push 2.0 address
+    jst float_add
+    
+    add sp, 3               ; cleanup stack
+    
+    set push, f_result      ; push result address
+    set push, f_2           ; push 2.0 address
+    set push, f_result      ; push (2 + 4) result address
                           ; same address can be used as multiple parameters
-  jsr float_mul
-  
-  add sp, 3               ; cleanup stack
-  
-  ; f_result now contains 12.0
-</pre>
+    jsr float_mul
+    
+    add sp, 3               ; cleanup stack
+    
+    ; f_result now contains 12.0
+
 --
 
-<h6>Number Format</h6>
+<h6>Data Format</h6>
 
-Each floating point number takes 4 words
+Each floating point number takes 4 words.
 
     [0] FLOAT_TYPE:
         FLOAT_TYPE_NAN   0x8000
