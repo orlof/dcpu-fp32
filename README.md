@@ -3,16 +3,16 @@
 --
 
 <h6>Design Philosophy</h6>
- - Easy integration to DCPU's operating systems and applications
- - Easile maintainable code base
- - Speed over memory consumption
+ - Easy API for integration into operating systems and applications
+ - Small and simple codebase
 
 <h6>Implementation Principles</h6>
- - parameters are passed by reference in stack
- - parameters are pushed to stack in right to left order
- - caller is responsible for cleaning the stack
+ - float parameters are passed in stack by pointer
  - int16 return value is passes in stack
+ - parameters are pushed to stack in right to left order
+ - caller is responsible for cleaning the stack (arguments and possible return value)
  - registers a, b, c, i, j, x, y and z are preserved
+ - same pointer can be used as any or all arguments
 
 --
 
@@ -54,33 +54,31 @@ Candidates for future development
   float_to_str
   
 
-Example (2 + 3) * 3
+Example (2 + 4) * 2
 
-  ; simple implementation
-  set push, float_result
-  set push, float_3
-  set push, float_2
+  #include "defs.dasm16"
+
+  :f_result dat 0,0,0,0
+  :f_2      dat FLOAT_TYPE_PNUM, 0x8001, 0x8000, 0x0000
+  :f_4      dat FLOAT_TYPE_PNUM, 0x8002, 0x8000, 0x0000
+
+  ; API calls
+  set push, f_result      ; push result address
+  set push, f_4           ; push 4.0 address
+  set push, f_2           ; push 2.0 address
   jst float_add
   
-  add sp, 3               ; cleanup
+  add sp, 3               ; cleanup stack
 
-  set push, float_result
-  set push, float_3
-  set push, float_result
+  set push, f_result      ; push result address
+  set push, f_2           ; push 2.0 address
+  set push, f_result      ; push (2 + 4) result address
+                          ; same address can be used as multiple parameters
   jsr float_mul
   
-  add sp, 3
+  add sp, 3               ; cleanup stack
   
-
-  ; optimized implementation
-  set push, float_result
-  set push, float_3
-  set push, float_2
-  jsr float_add
-
-  set [sp], float_result
-  jsr float_mul
-  add sp, 3
+  ; f_result now contains 12.0
 </pre>
 --
 
