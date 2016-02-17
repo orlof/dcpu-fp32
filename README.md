@@ -41,8 +41,6 @@ Running Tested Features
   void float_sub(float *left, float *right, float *result)
   void float_mul(float *left, float *right, float *result)
   void float_div(float *left, float *right, float *result)
-
-Implemented, but not tested
   uint16 float_to_uint16(float *src)
   void float_from_uint16(uint16 value, float *dst)
   void float_negate(float *src, float *dst)
