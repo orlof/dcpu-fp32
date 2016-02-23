@@ -2,6 +2,8 @@
 <h5><i>3rd Generation Floating Point library for DCPU</i></h5>
 --
 
+Provides basic floating point arithmetic for DCPU. Floating point numbers are represented in proprietary format that provides 8 bit exponent and 32 bit mantissa (only 31 significant bits as msb is always 1).
+
 <h6>Design Philosophy</h6>
  - Easy API for integration into operating systems and applications
  - Small and simple codebase
@@ -13,6 +15,12 @@
  - caller is responsible for cleaning the stack (arguments and possible return value)
  - registers a, b, c, i, j, x, y and z are preserved
  - same pointer can be used as any or all arguments
+
+<h6>SHORTCOMINGS</h6>
+ - Support only truncate rounding
+ - No denormalized numbers
+ - Both exponent's and significant's bit widths are hardcoded
+ - Division uses slow long division algorithm
 
 --
 
@@ -46,11 +54,11 @@ Test files (not needed):
 
 <h6>Candidates for future development</h6>
 
+    float_from_str
+    float_to_str
     sqrt
     pow
     sin, cos, tan
-    float_from_str
-    float_to_str
 
 <h6>Example</h6>
 
