@@ -1,7 +1,7 @@
 ;----------------------------------------------------------------
 ; HW VARIABLES
 ;----------------------------------------------------------------
-.define DUNIT__SCREEN, 0x8000
+#define DUNIT__SCREEN 0x8000
 
 :dunit__hw_keyboard         dat 0
 :dunit__hw_monitor          dat 0 

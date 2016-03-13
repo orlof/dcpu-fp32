@@ -1,17 +1,17 @@
 ; SPECIAL NUMBER TYPES
-.define FLOAT_TYPE_NAN, 0x8000
-.define FLOAT_TYPE_PINF, -3
-.define FLOAT_TYPE_PNUM, -2
-.define FLOAT_TYPE_PZERO, -1
-.define FLOAT_TYPE_DBZ, 0
-.define FLOAT_TYPE_NZERO, 1
-.define FLOAT_TYPE_NNUM, 2
-.define FLOAT_TYPE_NINF, 3
+#define FLOAT_TYPE_NAN 0x8000
+#define FLOAT_TYPE_PINF -3
+#define FLOAT_TYPE_PNUM -2
+#define FLOAT_TYPE_PZERO -1
+#define FLOAT_TYPE_DBZ 0
+#define FLOAT_TYPE_NZERO 1
+#define FLOAT_TYPE_NNUM 2
+#define FLOAT_TYPE_NINF 3
 
 ; OFFSETS
-.define FLOAT_TYPE, 0
-.define FLOAT_EXP, 1
-.define FLOAT_HIGH, 2
-.define FLOAT_LOW, 3
+#define FLOAT_TYPE 0
+#define FLOAT_EXP 1
+#define FLOAT_HIGH 2
+#define FLOAT_LOW 3
 
-.define FLOAT_EXP_BIAS, 0x8000
+#define FLOAT_EXP_BIAS 0x8000

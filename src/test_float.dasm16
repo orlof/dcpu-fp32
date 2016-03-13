@@ -735,6 +735,7 @@ dat    0x5028, f_nzero, f_n1_0, f_pzero
 dat    0x5029, f_p4_0, f_p2_0, f_p2_0
 dat    0x502a, f_p4_0, f_n2_0, f_n2_0
 dat    0x50ab, f_n4_0, f_n2_0, f_p2_0
+dat    0xdead, f_p2_0, f_p4_0, f_p0_5
 
 dat    -1, -1, -1, -1
 
@@ -794,6 +795,7 @@ dat    -1, -1, -1
 :f_ninf   dat FLOAT_TYPE_NINF, 0, 0, 0
 :f_pzero  dat FLOAT_TYPE_PZERO, 0, 0, 0
 :f_nzero  dat FLOAT_TYPE_NZERO, 0, 0, 0
+:f_p0_5   dat FLOAT_TYPE_PNUM, 0x7fff, 0x8000, 0x0000
 :f_p1_0   dat FLOAT_TYPE_PNUM, 0x8000, 0x8000, 0x0000
 :f_n1_0   dat FLOAT_TYPE_NNUM, 0x8000, 0x8000, 0x0000
 :f_p2_0   dat FLOAT_TYPE_PNUM, 0x8001, 0x8000, 0x0000

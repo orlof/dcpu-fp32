@@ -661,6 +661,7 @@
 		
 	set pc, float__return_zero
 
+
 ;----------------------------------------------------------------
 :float__return_j
     set i, j
@@ -869,6 +870,4 @@
 	dat	float__return_dbz,  float__return_dbz,   float__return_dbz,   float__return_dbz,   float__return_dbz,   float__return_dbz  ; -0.0
 	dat	float__return_ninf, float__div_nnum,     float__return_nzero, float__return_pzero, float__div_pnum,     float__return_pinf ; -num
 	dat	float__return_nan,  float__return_nzero, float__return_nzero, float__return_pzero, float__return_pzero, float__return_nan  ; -inf
-
-
 
