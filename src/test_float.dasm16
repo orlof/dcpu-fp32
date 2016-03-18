@@ -735,7 +735,7 @@ dat    0x5028, f_nzero, f_n1_0, f_pzero
 dat    0x5029, f_p4_0, f_p2_0, f_p2_0
 dat    0x502a, f_p4_0, f_n2_0, f_n2_0
 dat    0x50ab, f_n4_0, f_n2_0, f_p2_0
-dat    0xdead, f_p2_0, f_p4_0, f_p0_5
+dat    0x50ac, f_p2_0, f_p4_0, f_p0_5
 
 dat    -1, -1, -1, -1
 
