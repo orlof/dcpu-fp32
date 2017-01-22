@@ -9,69 +9,60 @@
 ;----------------------------------------------------------------
 :float_negate
     set push, i                 ; store registers
+    set push, j
 
 	;---------------------------------------
-    ; [sp + 3] result
-    ; [sp + 2] value
-    ; [sp + 1] rts
-    ; [sp + 0] i
+    ; [sp + 4] result
+    ; [sp + 3] value
+    ; [sp + 2] rts
+    ; [sp + 1] i
+    ; [sp + 0] j
 	;---------------------------------------
 
-	; copy value to stack
-	set i, [sp + 2]             ; float *value
-	
-	set push, [i + 3]
-	set push, [i + 2]
-	set push, [i + 1]
-	set push, [i]
-	
-	; copy stack to result
-	set i, [sp + 7]             ; float *result
+    set i, [sp + 3]
+    set j, [sp + 4]
 
-	set [i], pop
-	set [i + 1], pop
-	set [i + 2], pop
-	set [i + 3], pop
+    sti [j], [i]
+    sti [j], [i]
+    sti [j], [i]
+    sti [j], [i]
 
 	; change sign
-	mli [i], -1
+	mli [j - 4], -1
 
+	set j, pop
 	set i, pop
 	set pc, pop
-	
+
 ;----------------------------------------------------------------
 ; extern void float_abs(float *value, float *result)
 ;----------------------------------------------------------------
 :float_abs
     set push, i                 ; store registers
+    set push, j
 
 	;---------------------------------------
-    ; [sp + 3] result
-    ; [sp + 2] value
-    ; [sp + 1] rts
-    ; [sp + 0] i
+    ; [sp + 4] result
+    ; [sp + 3] value
+    ; [sp + 2] rts
+    ; [sp + 1] i
+    ; [sp + 0] j
 	;---------------------------------------
 
-	; copy value to stack
-	set i, [sp + 2]             ; float *value
-	
-	set push, [i + 3]
-	set push, [i + 2]
-	set push, [i + 1]
-	set push, [i]
-	
-	; copy stack to result
-	set i, [sp + 7]             ; float *result
+    set i, [sp + 3]
+    set j, [sp + 4]
 
-	set [i], pop
-	set [i + 1], pop
-	set [i + 2], pop
-	set [i + 3], pop
+    sti [j], [i]
+    sti [j], [i]
+    sti [j], [i]
+    sti [j], [i]
 
 	; change sign
-	ifa [i], 0
-		mli [i], -1
+    sub j, 4
+	ifa [j], 0
+		mli [j], -1
 
+	set j, pop
 	set i, pop
 	set pc, pop
 
@@ -98,23 +89,23 @@
 	set [c + 1], 0x801f
 	set [c + 2], 0
 	set [c + 3], [sp + 4]
-	
+
 	; normalize result
 	jsr float__nlz32
-	
+
 	shl [c + FLOAT_HIGH], a
 	shl [c + FLOAT_LOW], a
 	bor [c + FLOAT_HIGH], ex
-	
+
 	sub [c + FLOAT_EXP], a
-	
+
 	ife a, 32
 		set [c], FLOAT_TYPE_PZERO
 
 	set c, pop
 	set b, pop
 	set a, pop
-	set pc, pop	
+	set pc, pop
 
 ;----------------------------------------------------------------
 ; extern uint16 float_to_uint16(float *value)
@@ -134,10 +125,10 @@
 	;---------------------------------------
 
 	set a, [sp + 4]
-	
+
 	ifa [a], FLOAT_TYPE_PNUM
 		set pc, float_to_uint16__return_zero
-	
+
 	ifu [a], FLOAT_TYPE_PNUM
 		set pc, float_to_uint16__return_zero
 
@@ -152,7 +143,7 @@
 
 	set [sp + 3], [a + FLOAT_HIGH]
 	shr [sp + 3], b
-	
+
 	set pc, float_to_uint16__return
 
 :float_to_uint16__return_zero
@@ -161,7 +152,7 @@
 :float_to_uint16__return
 	set b, pop
 	set a, pop
-	set pc, pop	
+	set pc, pop
 
 ;----------------------------------------------------------------
 ; extern int16 float_cmp(float *left, float *right)
@@ -194,12 +185,12 @@
         set [sp + 3], -1
 
     ifn [sp + 3], 0             ; different types?
-        set pc, float_cmp__finish 
+        set pc, float_cmp__finish
 	; left.type == right.type
 
 	ifn [i], FLOAT_TYPE_PNUM    ; special values?
     	ifn [i], FLOAT_TYPE_NNUM
-            set pc, float_cmp__finish 
+            set pc, float_cmp__finish
 
 	; compare two positive or two negative numbers
     jsr _float_cmp_abs
@@ -310,7 +301,7 @@
 	; calculate exponent diff
 	set c, [i + FLOAT_EXP]
 	sub c, [j + FLOAT_EXP]
-	
+
 	; quick exit if j is too small
 	ifg c, 31
 		set pc, float__return_i
@@ -335,25 +326,25 @@
 
 :float_add__op_sub
 	bor b, ex
-	
+
 	sub [c + FLOAT_LOW], b
 	sbx [c + FLOAT_HIGH], a
 
     ife [c + FLOAT_LOW], 0
         ife [c + FLOAT_HIGH], 0
             set pc, float__return_pzero
-	
+
 	; normalize result
 	jsr float__nlz32
-	
+
 	shl [c + FLOAT_HIGH], a
 	shl [c + FLOAT_LOW], a
 	bor [c + FLOAT_HIGH], ex
-	
+
 	sub [c + FLOAT_EXP], a
 	ife ex, 0
 		set pc, float__return
-		
+
 	set pc, float__return_zero
 
 :float_add__op_add
@@ -436,13 +427,13 @@
 
 	set c, a			    		; calculate sum to c
     add c, b
-     
+
     xor a, c			    		; does arg1.exp and result.exp have different sign
     xor b, c			    		; does arg2.exp and result.exp have different sign
     and a, b		    			; both operands have different sign than sum
 
 	; value for overflow exit
-	set b, float__return_inf		; assume overflow as default 
+	set b, float__return_inf		; assume overflow as default
 	ifl [i + FLOAT_EXP], FLOAT_EXP_BIAS ; ...unless exp<0 then assume underflow
 		set b, float__return_zero
 
@@ -459,7 +450,7 @@
     mul [sp + FLOAT_LOW + 2], [i + FLOAT_LOW]
 
 	set [sp + FLOAT_LOW + 1], ex
-    
+
     set a, [i + FLOAT_HIGH]
     mul a, [j + FLOAT_LOW]
     set [sp + FLOAT_LOW], ex
@@ -473,7 +464,7 @@
 	add [sp + FLOAT_LOW + 1], a
 	add [sp + FLOAT_LOW], ex
 	add [sp + FLOAT_HIGH], ex
-	
+
 	set a, [i + FLOAT_HIGH]
 	mul a, [j + FLOAT_HIGH]
 	add [sp + FLOAT_HIGH], ex
@@ -493,7 +484,7 @@
         bor [sp + FLOAT_LOW], 0x0001
 
 	sub [sp + FLOAT_EXP], 1
-    
+
 :float__mul__no_normalize
     set i, sp
     set pc, float__return_i
@@ -518,7 +509,7 @@
 	; copy divident mantissa to stack
 	set push, [i + FLOAT_LOW]
 	set push, [i + FLOAT_HIGH]
-	
+
 	; allocate space for quotient
     sub sp, 4
 
@@ -565,7 +556,7 @@
 
 	set c, a			    		; quotient.exp = divident.exp - divisor.exp
     sub c, b
-     
+
 	; signed arithmetic overflow test
 	; c = a - b -> "((a ^ b) & !(b ^ c)) < 0"
     xor a, b                        ; does arg1.exp and arg2.exp have different sign
@@ -574,7 +565,7 @@
     and a, b                        ; !sgn(arg1.exp, arg2.exp) and sgn(arg2.exp, result.exp)
 
     ; value for overflow exit
-    set b, float__return_inf        ; assume overflow as default 
+    set b, float__return_inf        ; assume overflow as default
     ifc c, 0x8000
         set b, float__return_zero
 
@@ -603,7 +594,7 @@
 	ife [sp + 4], [j + FLOAT_HIGH]
 		ifl [sp + 5], [j + FLOAT_LOW]
 			set b, 0
-	
+
 	ifl [sp + 4], [j + FLOAT_HIGH]
 		set b, 0
 
@@ -643,7 +634,7 @@
 ;	ifc [sp + 4], 0x8000
 ;		set pc, float__div__next_bit
 
-	set pc, float__div__cmp		
+	set pc, float__div__cmp
 
 :float__div__normalize
 	set [sp + FLOAT_LOW], a
@@ -651,15 +642,15 @@
 	set c, sp
 	set i, sp
 	jsr float__nlz32
-	
+
 	shl [c + FLOAT_HIGH], a
 	shl [c + FLOAT_LOW], a
 	bor [c + FLOAT_HIGH], ex
-	
+
 	sub [c + FLOAT_EXP], a
 	ife ex, 0
 		set pc, float__return_i
-		
+
 	set pc, float__return_zero
 
 
@@ -730,7 +721,7 @@
 	set c, pop
 	set b, pop
 	set a, pop
-	
+
 	set pc, pop
 
 ;----------------------------------------------------------------
@@ -756,7 +747,7 @@
 
 	add a, 8
 	shl b, 8
-	
+
 :float__nlz8
 	ifb b, 0xf000
 		set pc, float__nlz4
@@ -779,7 +770,7 @@
 
     ifb b, 0x4000
         set pc, pop
-    
+
 	set a, 32
 	set pc, pop
 
@@ -789,7 +780,7 @@
 ;  i: float *left
 ;  j: float *right
 ; return
-;  [sp]: 
+;  [sp]:
 ;    1 if abs(left) > abs(right)
 ;    0 if abs(left) == abs(right)
 ;   -1 if abs(left) < abs(right)
@@ -837,7 +828,7 @@
 	add b, 21
 	ifa [j], 0
 		sub b, 6
-	
+
 	add b, [i]
 	ifa [i], 0
 		sub b, 1
@@ -871,4 +862,3 @@
 	dat	float__return_dbz,  float__return_dbz,   float__return_dbz,   float__return_dbz,   float__return_dbz,   float__return_dbz  ; -0.0
 	dat	float__return_ninf, float__div_nnum,     float__return_nzero, float__return_pzero, float__div_pnum,     float__return_pinf ; -num
 	dat	float__return_nan,  float__return_nzero, float__return_nzero, float__return_pzero, float__return_pzero, float__return_nan  ; -inf
-
